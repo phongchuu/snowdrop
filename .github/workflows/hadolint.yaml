@@ -25,7 +25,7 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
-      - uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf
+      - uses: hadolint/hadolint-action@d292784f8f3eacda47060b259a580467b0ba410c
         with:
           recursive: true
           format: sarif
