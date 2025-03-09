@@ -1,8 +1,8 @@
 {
-	"name": "momoino-lms",
+	"name": "snowdrop",
 	"dockerComposeFile": "compose.yaml",
 	"service": "workspace",
-	"workspaceFolder": "/workspaces/lms",
+	"workspaceFolder": "/workspaces/snowdrop",
 	"features": {
 		"ghcr.io/devcontainers/features/go:1": {
 			"version": "1.24",

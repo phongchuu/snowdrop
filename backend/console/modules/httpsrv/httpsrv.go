@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"go.uber.org/fx"
-	"momoino.lms/common/core"
+	"internal.snowdrop/common/core"
 )
 
 const readHeaderTimeout = 2 * time.Second

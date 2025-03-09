@@ -1,5 +1,5 @@
 ---
-name: lms
+name: Snowdrop
 
 volumes:
   postgres-data:
@@ -9,18 +9,18 @@ networks:
 
 configs:
   pgpass:
-    content: ${MOVIE_DB_ADMIN_PASSWORD}
+    content: ${SNOWDROP_DB_ADMIN_USER}
   servers.json:
     content: |
       {
         "Servers": {
           "1": {
             "Group": "Servers",
-            "Name": "${MOVIE_DB_NAME}",
+            "Name": "${SNOWDROP_DB_NAME}",
             "Host": "database",
             "Port": 5432,
-            "MaintenanceDB": "${MOVIE_DB_NAME}",
-            "Username": "${MOVIE_DB_ADMIN_USER}",
+            "MaintenanceDB": "${SNOWDROP_DB_NAME}",
+            "Username": "${SNOWDROP_DB_ADMIN_USER}",
             "PassFile": "/pgpass",
             "SSLMode": "prefer"
           }
@@ -39,9 +39,9 @@ services:
     environment:
       DB_HOST: database
       DB_PORT: 5432
-      DB_NAME: ${MOVIE_DB_NAME}
-      DB_USER: ${MOVIE_DB_ADMIN_USER}
-      DB_PASSWORD: ${MOVIE_DB_ADMIN_PASSWORD}
+      DB_NAME: ${SNOWDROP_DB_NAME}
+      DB_USER: ${SNOWDROP_DB_ADMIN_USER}
+      DB_PASSWORD: ${SNOWDROP_DB_ADMIN_PASSWORD}
     networks:
       - backend
 
@@ -50,11 +50,11 @@ services:
     image: postgres:17.4
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_SUPER_DB_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_SUPER_DB_PASSWORD}
-      MOVIE_DB_NAME: ${MOVIE_DB_NAME}
-      MOVIE_DB_ADMIN_USER: ${MOVIE_DB_ADMIN_USER}
-      MOVIE_DB_ADMIN_PASSWORD: ${MOVIE_DB_ADMIN_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_DB_SUPER_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_DB_SUPER_PASSWORD}
+      SNOWDROP_DB_NAME: ${SNOWDROP_DB_NAME}
+      SNOWDROP_DB_ADMIN_USER: ${SNOWDROP_DB_ADMIN_USER}
+      SNOWDROP_DB_ADMIN_PASSWORD: ${SNOWDROP_DB_ADMIN_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./.docker/database/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
@@ -65,7 +65,7 @@ services:
     image: dpage/pgadmin4:9.1.0
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: root@example.com
+      PGADMIN_DEFAULT_EMAIL: snowdrop-admin@local.com
       PGADMIN_DEFAULT_PASSWORD: Keep!t5ecret
     ports:
       - 8080:80

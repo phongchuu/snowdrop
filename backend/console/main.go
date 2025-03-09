@@ -9,8 +9,8 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
-	"momoino.lms/common/core"
-	"momoino.lms/console/modules/httpsrv"
+	"internal.snowdrop/common/core"
+	"internal.snowdrop/console/modules/httpsrv"
 )
 
 var (

@@ -1,12 +1,12 @@
-module momoino.lms/testing
+module internal.snowdrop/testing
 
 go 1.24.0
 
-replace momoino.lms/common => ../common
+replace internal.snowdrop/common => ../common
 
 require (
 	github.com/stretchr/testify v1.10.0
-	momoino.lms/common v0.0.0-00010101000000-000000000000
+	internal.snowdrop/common v0.0.0-00010101000000-000000000000
 )
 
 require (

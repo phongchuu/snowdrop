@@ -4,5 +4,5 @@
         "config:recommended"
     ],
     "additionalReviewers": ["phongchuu"],
-    "ignoreDeps": ["momoino.lms/common"]
+    "ignoreDeps": ["internal.snowdrop/common"]
 }
