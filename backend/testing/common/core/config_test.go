@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"momoino.lms/common/core"
+	"internal.snowdrop/common/core"
 )
 
 func TestNewConfig(t *testing.T) {

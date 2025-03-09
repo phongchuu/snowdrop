@@ -1,4 +1,4 @@
-module momoino.lms/common
+module internal.snowdrop/common
 
 go 1.24.0
 

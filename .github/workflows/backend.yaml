@@ -71,7 +71,7 @@ jobs:
             -cover \
             -covermode=atomic \
             -coverprofile "coverage.txt" \
-            -coverpkg "momoino.lms/common/...,momoino.lms/console/..." \
+            -coverpkg "internal.snowdrop/common/...,internal.snowdrop/console/..." \
             -race \
             ./...
 
@@ -98,4 +98,4 @@ jobs:
           file: backend/console/Dockerfile
           load: true
           push: false
-          tags: momoino.lms/app:0.0.1-dev
+          tags: internal.snowdrop/app:0.0.1-dev

@@ -23,4 +23,4 @@ EOSQL
 }
 
 # drop_database "root"
-create_database "$MOVIE_DB_NAME" "$MOVIE_DB_ADMIN_USER" "$MOVIE_DB_ADMIN_PASSWORD"
+create_database "$SNOWDROP_DB_NAME" "$SNOWDROP_DB_ADMIN_USER" "$SNOWDROP_DB_ADMIN_PASSWORD"
