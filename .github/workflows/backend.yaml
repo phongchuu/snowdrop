@@ -1,0 +1,101 @@
+---
+name: Backend
+
+"on":
+  pull_request:
+    paths: [backend/**]
+  push:
+    paths: [backend/**]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+  security-events: write
+
+jobs:
+  verify:
+    name: Verification
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - backend/common
+          - backend/console
+          - backend/testing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./backend/go.work
+          cache-dependency-path: backend/**/*.sum
+      - working-directory: ${{ matrix.path }}
+        run: |
+          go mod tidy || {
+            echo "go mod tidy failed."
+            exit 1
+          }
+
+          git diff --exit-code --quiet go.mod go.sum || {
+            echo "git diff failed."
+            exit 1
+          }
+
+          echo "go mod tidy succeeded."
+      - uses: golangci/golangci-lint-action@2226d7cb06a077cd73e56eedd38eecad18e5d837
+        with:
+          version: v1.64.6
+          working-directory: ${{ matrix.path }}
+          args: --config=../.golangci.yaml
+
+  unit-test:
+    name: Unit test
+    needs: [verify]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./backend/go.work
+          cache-dependency-path: backend/**/*.sum
+      - name: unit test
+        working-directory: backend/testing
+        run: |
+          go test \
+            -cover \
+            -covermode=atomic \
+            -coverprofile "coverage.txt" \
+            -coverpkg "momoino.lms/common/...,momoino.lms/console/..." \
+            -race \
+            ./...
+
+  build:
+    name: Build image
+    needs:
+      - verify
+      - unit-test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./backend/go.work
+          cache-dependency-path: backend/**/*.sum
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
+      - name: Build ${{ matrix.app }}
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+        with:
+          context: backend
+          file: backend/console/Dockerfile
+          load: true
+          push: false
+          tags: momoino.lms/app:0.0.1-dev
