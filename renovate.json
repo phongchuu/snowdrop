@@ -4,5 +4,6 @@
         "config:recommended"
     ],
     "additionalReviewers": ["phongchuu"],
+    "addLabels": ["dependencies"],
     "ignoreDeps": ["internal.snowdrop/common"]
 }
