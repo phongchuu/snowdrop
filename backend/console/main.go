@@ -10,6 +10,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"internal.snowdrop/common/core"
+	"internal.snowdrop/common/features/healthz"
 	"internal.snowdrop/console/modules/httpsrv"
 )
 
@@ -31,6 +32,7 @@ func main() {
 		core.NewConfigModule(embedResourcesFolder),
 		core.NewDatabaseModule(),
 		httpsrv.NewHTTPServerModule(),
+		healthz.NewHealthzModule(),
 		fx.WithLogger(func(logger *slog.Logger) fxevent.Logger {
 			fxEventLogger := &fxevent.SlogLogger{
 				Logger: logger,

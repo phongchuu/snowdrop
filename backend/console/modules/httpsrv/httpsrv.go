@@ -13,10 +13,15 @@ import (
 
 const readHeaderTimeout = 2 * time.Second
 
-func newHTTPServer(lc fx.Lifecycle, logger *slog.Logger) *http.Server {
+func newHTTPServer(
+	lc fx.Lifecycle,
+	logger *slog.Logger,
+	httpHandler http.Handler,
+) *http.Server {
 	srv := &http.Server{
 		Addr:              ":3000",
 		ReadHeaderTimeout: readHeaderTimeout,
+		Handler:           httpHandler,
 	}
 
 	lc.Append(fx.Hook{
