@@ -8,7 +8,7 @@ func NewHTTPServerModule() fx.Option {
 	return fx.Module(
 		"HttpServerModule",
 		fx.Provide(
-			newHTTPHandler,
+			newRouter,
 			newHTTPServer,
 		),
 	)
