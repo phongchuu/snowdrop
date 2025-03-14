@@ -4,9 +4,13 @@ go 1.24.0
 
 replace internal.snowdrop/common => ../common
 
+replace internal.snowdrop/console => ../console
+
 require (
+	github.com/go-chi/chi/v5 v5.2.1
 	github.com/stretchr/testify v1.10.0
 	internal.snowdrop/common v0.0.0-00010101000000-000000000000
+	internal.snowdrop/console v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -27,6 +31,7 @@ require (
 	github.com/puzpuzpuz/xsync/v3 v3.5.1 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
+	github.com/samber/lo v1.49.1 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
