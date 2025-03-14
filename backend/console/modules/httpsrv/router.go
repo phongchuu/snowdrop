@@ -1,7 +1,6 @@
 package httpsrv
 
 import (
-	"log/slog"
 	"net/http"
 	"slices"
 	"time"
@@ -15,14 +14,11 @@ import (
 
 type RouteParams struct {
 	fx.In
-
-	Config     core.AppConfig
-	Logger     *slog.Logger
 	HTTPRoutes []core.HTTPHandler `group:"http_routes"`
 }
 
-// newRouter initializes and returns a new HTTP router instance.
-func newRouter(params RouteParams) http.Handler {
+// NewRouter initializes and returns a new HTTP router instance.
+func NewRouter(params RouteParams) *chi.Mux {
 	r := chi.NewRouter()
 
 	publicRoutes := []core.HTTPHandler{}
@@ -48,7 +44,7 @@ func newRouter(params RouteParams) http.Handler {
 		r.Use(lo.Values(middlewares)...)
 
 		for _, route := range publicRoutes {
-			r.Handle(route.Pattern(), route)
+			r.Method(route.Method(), route.Path(), route)
 		}
 	})
 
@@ -59,7 +55,7 @@ func newRouter(params RouteParams) http.Handler {
 		r.Use(lo.Values(middlewares)...)
 
 		for _, route := range privateRoutes {
-			r.Handle(route.Pattern(), route)
+			r.Method(route.Method(), route.Path(), route)
 		}
 	})
 
