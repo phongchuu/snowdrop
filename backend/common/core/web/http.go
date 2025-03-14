@@ -1,4 +1,4 @@
-package core
+package web
 
 import (
 	"bytes"
@@ -23,9 +23,6 @@ type ResponseController struct {
 	r *http.Request
 }
 
-const PublicRoute RouteTag = 0
-const PrivateRoute RouteTag = 1
-
 func NewResponseController(w http.ResponseWriter, r *http.Request) *ResponseController {
 	return &ResponseController{w, r}
 }
@@ -48,7 +45,7 @@ func (r ResponseController) JSON(value any) {
 	_, _ = r.w.Write(buf.Bytes())
 }
 
-func Route(function any) any {
+func HTTPRoute(function any) any {
 	return fx.Annotate(
 		function,
 		fx.As(new(HTTPHandler)),

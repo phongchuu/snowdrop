@@ -9,7 +9,9 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
-	"internal.snowdrop/common/core"
+	"internal.snowdrop/common/core/config"
+	"internal.snowdrop/common/core/database"
+	"internal.snowdrop/common/core/log"
 	"internal.snowdrop/common/features/healthz"
 	"internal.snowdrop/console/modules/httpsrv"
 )
@@ -28,9 +30,9 @@ func main() {
 	flag.Parse()
 
 	fx.New(
-		fx.Supply(core.NewStdoutLogger(core.WithLogLevel(lo.Ternary(*isDebug, slog.LevelDebug, slog.LevelInfo)))),
-		core.NewConfigModule(embedResourcesFolder),
-		core.NewDatabaseModule(),
+		fx.Supply(log.NewStdoutLogger(log.WithLogLevel(lo.Ternary(*isDebug, slog.LevelDebug, slog.LevelInfo)))),
+		config.NewConfigModule(embedResourcesFolder),
+		database.NewDatabaseModule(),
 		httpsrv.NewHTTPServerModule(),
 		healthz.NewHealthzModule(),
 		fx.WithLogger(func(logger *slog.Logger) fxevent.Logger {

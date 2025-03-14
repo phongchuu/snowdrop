@@ -9,23 +9,23 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/samber/lo"
 	"go.uber.org/fx"
-	"internal.snowdrop/common/core"
+	"internal.snowdrop/common/core/web"
 )
 
 type RouteParams struct {
 	fx.In
-	HTTPRoutes []core.HTTPHandler `group:"http_routes"`
+	HTTPRoutes []web.HTTPHandler `group:"http_routes"`
 }
 
 // NewRouter initializes and returns a new HTTP router instance.
 func NewRouter(params RouteParams) *chi.Mux {
 	r := chi.NewRouter()
 
-	publicRoutes := []core.HTTPHandler{}
-	privateRoutes := []core.HTTPHandler{}
+	publicRoutes := []web.HTTPHandler{}
+	privateRoutes := []web.HTTPHandler{}
 
 	for _, route := range params.HTTPRoutes {
-		if slices.Contains(route.Tags(), core.PrivateRoute) {
+		if slices.Contains(route.Tags(), web.PrivateRoute) {
 			privateRoutes = append(privateRoutes, route)
 		} else {
 			publicRoutes = append(publicRoutes, route)

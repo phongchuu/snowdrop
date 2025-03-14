@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"go.uber.org/fx"
-	"internal.snowdrop/common/core"
+	"internal.snowdrop/common/core/log"
 )
 
 const readHeaderTimeout = 2 * time.Second
@@ -35,7 +35,7 @@ func newHTTPServer(
 
 			go func() {
 				if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
-					logger.ErrorContext(ctx, "HTTP server serve error: ", core.ErrorLogAttr(err))
+					logger.ErrorContext(ctx, "HTTP server serve error: ", log.ErrorLogAttr(err))
 				}
 			}()
 
