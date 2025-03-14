@@ -6,11 +6,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"internal.snowdrop/common/core"
+	"internal.snowdrop/common/core/config"
 )
 
 func TestNewConfig(t *testing.T) {
-	appCfg, err := core.NewConfig(fstest.MapFS{})
+	appCfg, err := config.NewAppConfig(fstest.MapFS{})
 	require.NoError(t, err)
 	assert.NotNil(t, appCfg)
 }
@@ -24,7 +24,7 @@ func TestGetDatabaseURL(t *testing.T) {
 	t.Setenv("APP_DB_NAME", "testdb")
 	t.Setenv("APP_DB_PORT", "5432")
 
-	appCfg, err := core.NewConfig(embedFS)
+	appCfg, err := config.NewAppConfig(embedFS)
 	require.NoError(t, err)
 	assert.NotNil(t, appCfg)
 
@@ -34,7 +34,7 @@ func TestGetDatabaseURL(t *testing.T) {
 func TestGetEmbedResourceFolder(t *testing.T) {
 	var embedFS fstest.MapFS
 
-	appCfg, err := core.NewConfig(embedFS)
+	appCfg, err := config.NewAppConfig(embedFS)
 	require.NoError(t, err)
 	assert.NotNil(t, appCfg)
 

@@ -1,11 +1,9 @@
-package core
+package log
 
 import (
 	"context"
 	"io"
 	"log/slog"
-	"os"
-	"path/filepath"
 )
 
 type slogFieldsCtxKey int
@@ -45,6 +43,8 @@ func WithLogAttr(parent context.Context, attr slog.Attr) context.Context {
 	return context.WithValue(parent, slogFieldsCtxID, v)
 }
 
+// WithLogLevel returns a function that sets the log level for slog.HandlerOptions.
+// This allows customization of the logging level for a slog handler.
 func WithLogLevel(level slog.Level) func(*slog.HandlerOptions) {
 	return func(handlerOptions *slog.HandlerOptions) {
 		handlerOptions.Level = level
@@ -55,38 +55,6 @@ func WithLogLevel(level slog.Level) func(*slog.HandlerOptions) {
 // It uses the slog.NewJSONHandler to format log messages as JSON.
 func newLogger(writer io.Writer, cfg *slog.HandlerOptions) *slog.Logger {
 	return slog.New(&contextHandler{slog.NewJSONHandler(writer, cfg)})
-}
-
-// NewNoopLogger returns a logger that discards all log messages.
-// It can be used for testing or when no logging is required.
-func NewNoopLogger() *slog.Logger {
-	return slog.New(slog.DiscardHandler)
-}
-
-// NewStdoutLogger returns a logger that writes log messages to the standard output (os.Stdout).
-func NewStdoutLogger(opts ...func(*slog.HandlerOptions)) *slog.Logger {
-	handlerOptions := &slog.HandlerOptions{
-		AddSource: true,
-		Level:     slog.LevelInfo,
-		ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.SourceKey {
-				source, _ := a.Value.Any().(*slog.Source)
-				a.Value = slog.AnyValue(slog.Source{
-					Function: source.Function,
-					File:     filepath.Base(source.File),
-					Line:     source.Line,
-				})
-			}
-
-			return a
-		},
-	}
-
-	for _, optFn := range opts {
-		optFn(handlerOptions)
-	}
-
-	return newLogger(os.Stdout, handlerOptions)
 }
 
 // ErrorLogAttr creates an slog attribute with the key "details" and the provided error value.
