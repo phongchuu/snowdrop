@@ -14,12 +14,16 @@ func NewHealthCheckRoute() *HealthCheckRoute {
 	return &HealthCheckRoute{}
 }
 
-func (h *HealthCheckRoute) Tags() []core.RouteTag {
-	return []core.RouteTag{core.PublicRoute}
+func (h *HealthCheckRoute) Method() string {
+	return http.MethodGet
 }
 
-func (h *HealthCheckRoute) Pattern() string {
-	return "GET /healthz"
+func (h *HealthCheckRoute) Path() string {
+	return "/healthz"
+}
+
+func (h *HealthCheckRoute) Tags() []core.RouteTag {
+	return []core.RouteTag{core.PublicRoute}
 }
 
 func (h *HealthCheckRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {

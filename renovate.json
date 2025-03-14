@@ -5,5 +5,8 @@
     ],
     "additionalReviewers": ["phongchuu"],
     "addLabels": ["dependencies"],
-    "ignoreDeps": ["internal.snowdrop/common"]
+    "ignoreDeps": [
+        "internal.snowdrop/common",
+        "internal.snowdrop/console"
+    ]
 }

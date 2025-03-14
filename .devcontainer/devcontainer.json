@@ -6,7 +6,7 @@
 	"features": {
 		"ghcr.io/devcontainers/features/go:1": {
 			"version": "1.24",
-			"golangciLintVersion": "1.64.5"
+			"golangciLintVersion": "1.64.7"
 		}
 	},
 	"customizations": {
@@ -22,5 +22,5 @@
 			]
 		}
 	},
-	"forwardPorts": []
+	"forwardPorts": [3000]
 }

@@ -12,8 +12,10 @@ type RouteTag = int
 
 type HTTPHandler interface {
 	http.Handler
+
+	Method() string
+	Path() string
 	Tags() []RouteTag
-	Pattern() string
 }
 
 type ResponseController struct {
