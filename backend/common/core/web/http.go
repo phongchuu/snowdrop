@@ -10,9 +10,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/samber/lo"
 	"go.uber.org/fx"
 	"internal.snowdrop/common/core/log"
+	"internal.snowdrop/common/core/trans"
 )
 
 type RouteTag = int
@@ -27,6 +29,7 @@ type HTTPHandler interface {
 
 type RouteParams struct {
 	fx.In
+	I18nBundle *i18n.Bundle
 	HTTPRoutes []HTTPHandler `group:"http_routes"`
 }
 
@@ -64,6 +67,7 @@ func NewRouter(params RouteParams) *chi.Mux {
 
 	middlewares := map[int]func(http.Handler) http.Handler{
 		0:  middleware.CleanPath,
+		30: trans.WithI18nMiddleware(params.I18nBundle),
 		60: middleware.Timeout(time.Minute),
 	}
 

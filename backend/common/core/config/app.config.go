@@ -14,18 +14,12 @@ type AppConfig struct {
 	embedResourcesFolder fs.FS
 }
 
-// GetEmbedResourceFolder returns the embedded resource folder as a filesystem (fs.FS).
-// This folder contains the embedded resources used by the application.
+var _ Manager = (*AppConfig)(nil)
+
 func (appCfg AppConfig) GetEmbedResourceFolder() fs.FS {
 	return appCfg.embedResourcesFolder
 }
 
-// GetDatabaseURL constructs and returns the database connection URL
-// using the configuration values stored in the AppConfig instance.
-// It retrieves the database username, password, host, port, and name
-// from the viper instance and formats them into a PostgreSQL connection string.
-//
-// Returns: The formatted PostgreSQL connection URL.
 func (appCfg AppConfig) GetDatabaseURL() string {
 	username := appCfg.viperInstance.GetString("db_username")
 	password := appCfg.viperInstance.GetString("db_password")

@@ -6,12 +6,15 @@ require (
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/gorilla/schema v1.4.1
 	github.com/jackc/pgx/v5 v5.7.2
+	github.com/nicksnyder/go-i18n/v2 v2.5.1
 	github.com/pressly/goose/v3 v3.24.1
 	github.com/samber/lo v1.49.1
 	github.com/spf13/viper v1.19.0
 	github.com/uptrace/bun v1.2.11
 	github.com/uptrace/bun/dialect/pgdialect v1.2.11
 	go.uber.org/fx v1.23.0
+	golang.org/x/text v0.21.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -44,7 +47,5 @@ require (
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

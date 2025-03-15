@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"internal.snowdrop/common/core/config"
 	"internal.snowdrop/common/core/web"
 )
 
@@ -15,9 +16,9 @@ type FileServerRoute struct {
 
 var _ web.HTTPHandler = (*FileServerRoute)(nil)
 
-func NewStaticRoute(embedResourcesFolder fs.FS) *FileServerRoute {
+func NewStaticRoute(config config.Manager) *FileServerRoute {
 	return &FileServerRoute{
-		embedResourcesFolder: embedResourcesFolder,
+		embedResourcesFolder: config.GetEmbedResourceFolder(),
 	}
 }
 

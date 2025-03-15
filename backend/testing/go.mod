@@ -8,6 +8,7 @@ replace internal.snowdrop/console => ../console
 
 require (
 	github.com/go-chi/chi/v5 v5.2.1
+	github.com/nicksnyder/go-i18n/v2 v2.5.1
 	github.com/stretchr/testify v1.10.0
 	internal.snowdrop/common v0.0.0-00010101000000-000000000000
 )
@@ -29,6 +30,7 @@ require (
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.19.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/dig v1.18.0 // indirect
 	go.uber.org/fx v1.23.0 // indirect

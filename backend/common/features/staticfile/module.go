@@ -1,19 +1,15 @@
 package staticfile
 
 import (
-	"io/fs"
-
 	"go.uber.org/fx"
 	"internal.snowdrop/common/core/web"
 )
 
-func NewModule(embedResourcesFolder fs.FS) fx.Option {
+func NewModule() fx.Option {
 	return fx.Module(
-		"StaticModule",
+		"StaticFileModule",
 		fx.Provide(
-			web.HTTPRoute(func() *FileServerRoute {
-				return NewStaticRoute(embedResourcesFolder)
-			}),
+			web.HTTPRoute(NewStaticRoute),
 		),
 	)
 }
