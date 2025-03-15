@@ -1,4 +1,4 @@
-package healthz
+package openapi
 
 import (
 	"go.uber.org/fx"
@@ -7,7 +7,9 @@ import (
 
 func NewModule() fx.Option {
 	return fx.Module(
-		"HealthzModule",
-		fx.Provide(web.HTTPRoute(NewHealthCheckRoute)),
+		"StaticModule",
+		fx.Provide(
+			web.HTTPRoute(NewDocumentationRoute),
+		),
 	)
 }

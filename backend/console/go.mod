@@ -5,7 +5,6 @@ go 1.24.0
 replace internal.snowdrop/common => ../common
 
 require (
-	github.com/go-chi/chi/v5 v5.2.1
 	github.com/samber/lo v1.49.1
 	go.uber.org/fx v1.23.0
 	internal.snowdrop/common v0.0.0-00010101000000-000000000000
@@ -13,6 +12,8 @@ require (
 
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/go-chi/chi/v5 v5.2.1 // indirect
+	github.com/gorilla/schema v1.4.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect

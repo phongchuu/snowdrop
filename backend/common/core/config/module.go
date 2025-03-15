@@ -6,7 +6,7 @@ import (
 	"go.uber.org/fx"
 )
 
-// NewConfigModule creates a new Fx module for application configuration.
+// NewModule creates a new Fx module for application configuration.
 // It takes an embedded resources folder as an argument and provides an AppConfig instance.
 //
 // Parameters:
@@ -14,7 +14,7 @@ import (
 //
 // Returns:
 //   - fx.Option: an Fx module option that provides the AppConfig instance.
-func NewConfigModule(embedResourcesFolder fs.FS) fx.Option {
+func NewModule(embedResourcesFolder fs.FS) fx.Option {
 	return fx.Module(
 		"ConfigModule",
 		fx.Provide(func() (AppConfig, error) {

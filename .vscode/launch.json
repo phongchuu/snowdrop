@@ -9,15 +9,9 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceRoot}/backend/console",
+            "program": "${workspaceFolder}/backend/console",
             "buildFlags": "-ldflags='-X main.AppVersion=0.0.1-dev -X main.AppRevision=unknown -X main.AppReleaseDate=1970/01/01'",
-            "env": {
-                "APP_DB_HOST": "${env:DB_HOST}",
-                "APP_DB_PORT": "${env:DB_PORT}",
-                "APP_DB_NAME": "${env:DB_NAME}",
-                "APP_DB_USERNAME": "${env:DB_USER}",
-                "APP_DB_PASSWORD": "${env:DB_PASSWORD}",
-            }
+            "envFile": "${workspaceFolder}/.env",
         }
     ]
 }

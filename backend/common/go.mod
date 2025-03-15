@@ -3,8 +3,11 @@ module internal.snowdrop/common
 go 1.24.0
 
 require (
+	github.com/go-chi/chi/v5 v5.2.1
+	github.com/gorilla/schema v1.4.1
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/pressly/goose/v3 v3.24.1
+	github.com/samber/lo v1.49.1
 	github.com/spf13/viper v1.19.0
 	github.com/uptrace/bun v1.2.11
 	github.com/uptrace/bun/dialect/pgdialect v1.2.11

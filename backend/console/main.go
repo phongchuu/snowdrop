@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/samber/lo"
 	"go.uber.org/fx"
@@ -12,8 +13,11 @@ import (
 	"internal.snowdrop/common/core/config"
 	"internal.snowdrop/common/core/database"
 	"internal.snowdrop/common/core/log"
+	"internal.snowdrop/common/core/web"
+	"internal.snowdrop/common/features/auth"
 	"internal.snowdrop/common/features/healthz"
-	"internal.snowdrop/console/modules/httpsrv"
+	"internal.snowdrop/common/features/openapi"
+	"internal.snowdrop/common/features/staticfile"
 )
 
 var (
@@ -26,15 +30,20 @@ var (
 )
 
 func main() {
+	time.Local = time.UTC
+
 	isDebug := flag.Bool("debug", false, "Enable this flag to see debug log")
 	flag.Parse()
 
 	fx.New(
 		fx.Supply(log.NewStdoutLogger(log.WithLogLevel(lo.Ternary(*isDebug, slog.LevelDebug, slog.LevelInfo)))),
-		config.NewConfigModule(embedResourcesFolder),
-		database.NewDatabaseModule(),
-		httpsrv.NewHTTPServerModule(),
-		healthz.NewHealthzModule(),
+		config.NewModule(embedResourcesFolder),
+		database.NewModule(),
+		healthz.NewModule(),
+		auth.NewModule(),
+		web.NewModule(),
+		openapi.NewModule(),
+		staticfile.NewModule(embedResourcesFolder),
 		fx.WithLogger(func(logger *slog.Logger) fxevent.Logger {
 			fxEventLogger := &fxevent.SlogLogger{
 				Logger: logger,
