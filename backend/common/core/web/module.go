@@ -1,4 +1,4 @@
-package httpsrv
+package web
 
 import (
 	"net/http"
@@ -6,12 +6,13 @@ import (
 	"go.uber.org/fx"
 )
 
-func NewHTTPServerModule() fx.Option {
+func NewModule() fx.Option {
 	return fx.Module(
-		"HttpServerModule",
+		"WebModule",
 		fx.Provide(
 			fx.Annotate(NewRouter, fx.As(new(http.Handler))),
 			newHTTPServer,
+			NewSchemaDecoder,
 		),
 	)
 }

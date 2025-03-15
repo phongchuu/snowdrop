@@ -1,0 +1,12 @@
+---
+openapi: 3.1.1
+
+info:
+  title: Snowdrop
+  version: 1.0.0
+
+paths:
+  /healthz:
+    get:
+      responses:
+        "204":

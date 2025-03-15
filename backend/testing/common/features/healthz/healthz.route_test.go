@@ -9,11 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"internal.snowdrop/common/core/web"
 	"internal.snowdrop/common/features/healthz"
-	"internal.snowdrop/console/modules/httpsrv"
 )
 
 func TestHealthCheckRoute(t *testing.T) {
-	router := httpsrv.NewRouter(httpsrv.RouteParams{
+	router := web.NewRouter(web.RouteParams{
 		HTTPRoutes: []web.HTTPHandler{healthz.NewHealthCheckRoute()},
 	})
 
@@ -22,7 +21,7 @@ func TestHealthCheckRoute(t *testing.T) {
 
 func TestHealthCheckRouteServeHTTP(t *testing.T) {
 	healthzRoute := healthz.NewHealthCheckRoute()
-	router := httpsrv.NewRouter(httpsrv.RouteParams{
+	router := web.NewRouter(web.RouteParams{
 		HTTPRoutes: []web.HTTPHandler{healthzRoute},
 	})
 

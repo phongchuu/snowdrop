@@ -10,12 +10,12 @@ require (
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/stretchr/testify v1.10.0
 	internal.snowdrop/common v0.0.0-00010101000000-000000000000
-	internal.snowdrop/console v0.0.0-00010101000000-000000000000
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/gorilla/schema v1.4.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

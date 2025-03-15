@@ -14,19 +14,23 @@ func NewHealthCheckRoute() *HealthCheckRoute {
 	return &HealthCheckRoute{}
 }
 
+// Method implements web.HTTPHandler.
 func (h *HealthCheckRoute) Method() string {
 	return http.MethodGet
 }
 
+// Path implements web.HTTPHandler.
 func (h *HealthCheckRoute) Path() string {
 	return "/healthz"
 }
 
+// Tags implements web.HTTPHandler.
 func (h *HealthCheckRoute) Tags() []web.RouteTag {
 	return []web.RouteTag{web.PublicRoute}
 }
 
+// ServeHTTP implements web.HTTPHandler.
 func (h *HealthCheckRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	resCtrl := web.NewResponseController(w, r)
+	resCtrl := web.NewResponseBuilder(w, r)
 	resCtrl.Status(http.StatusNoContent)
 }
