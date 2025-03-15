@@ -1,0 +1,14 @@
+---
+"200": Yêu cầu đã được thực hiện thành công.
+"201": Tài nguyên đã được tạo thành công trên máy chủ.
+"202": Yêu cầu đã được chấp nhận và đang chờ xử lý.
+"400": Yêu cầu không hợp lệ, vui lòng kiểm tra lại cú pháp.
+"401": Vui lòng xác thực để thực hiện yêu cầu này.
+"403": Bạn không có quyền truy cập tài nguyên này.
+"404": Không tìm thấy tài nguyên được yêu cầu trên máy chủ.
+"408": Máy chủ đã hết thời gian chờ, vui lòng thử lại.
+"500": Đã xảy ra lỗi nội bộ trên máy chủ, vui lòng thử lại sau.
+"501": Máy chủ chưa hỗ trợ thực hiện yêu cầu này.
+"502": Máy chủ nhận được phản hồi không hợp lệ từ máy chủ khác.
+"503": Dịch vụ hiện không khả dụng, vui lòng thử lại sau.
+"504": Máy chủ không nhận được phản hồi từ máy chủ khác kịp thời.

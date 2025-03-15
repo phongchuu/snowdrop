@@ -24,7 +24,7 @@ import (
 //   - error: An error if the database connection could not be established.
 func newDatabase(
 	lc fx.Lifecycle,
-	config config.AppConfig,
+	config config.Manager,
 ) (*bun.DB, error) {
 	pool, err := pgxpool.New(context.Background(), config.GetDatabaseURL())
 	if err != nil {
@@ -59,7 +59,7 @@ func newDatabase(
 //
 // Returns:
 //   - An error if the goose migration setup or execution fails, otherwise nil.
-func executeDatabaseUpgrade(lc fx.Lifecycle, logger *slog.Logger, db *bun.DB, config config.AppConfig) {
+func executeDatabaseUpgrade(lc fx.Lifecycle, logger *slog.Logger, db *bun.DB, config config.Manager) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			goose.SetBaseFS(config.GetEmbedResourceFolder())

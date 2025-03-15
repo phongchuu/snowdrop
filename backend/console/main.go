@@ -13,6 +13,7 @@ import (
 	"internal.snowdrop/common/core/config"
 	"internal.snowdrop/common/core/database"
 	"internal.snowdrop/common/core/log"
+	"internal.snowdrop/common/core/trans"
 	"internal.snowdrop/common/core/web"
 	"internal.snowdrop/common/features/auth"
 	"internal.snowdrop/common/features/healthz"
@@ -43,7 +44,8 @@ func main() {
 		auth.NewModule(),
 		web.NewModule(),
 		openapi.NewModule(),
-		staticfile.NewModule(embedResourcesFolder),
+		staticfile.NewModule(),
+		trans.NewModule(),
 		fx.WithLogger(func(logger *slog.Logger) fxevent.Logger {
 			fxEventLogger := &fxevent.SlogLogger{
 				Logger: logger,

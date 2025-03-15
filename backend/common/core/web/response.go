@@ -5,7 +5,12 @@ import (
 	"encoding/json"
 	"math"
 	"net/http"
+	"strconv"
 	"time"
+
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/samber/lo"
+	"internal.snowdrop/common/core/trans"
 )
 
 type Pagination struct {
@@ -24,16 +29,18 @@ type Response[T any] struct {
 }
 
 type ResponseBuilder[T any] struct {
-	w      http.ResponseWriter
-	r      *http.Request
-	result Response[T]
+	w         http.ResponseWriter
+	r         *http.Request
+	localizer *i18n.Localizer
+	result    Response[T]
 }
 
 func NewResponseBuilder(w http.ResponseWriter, r *http.Request) *ResponseBuilder[any] {
 	return &ResponseBuilder[any]{
-		w:      w,
-		r:      r,
-		result: Response[any]{},
+		w:         w,
+		r:         r,
+		result:    Response[any]{},
+		localizer: trans.GetLocalizer(r),
 	}
 }
 
@@ -46,15 +53,17 @@ func NewGenericResponseBuilder[T any](w http.ResponseWriter, r *http.Request) *R
 }
 
 func (r *ResponseBuilder[T]) setDefaults() {
+	r.result.Timestamp = time.Now()
+
 	if r.result.Status == 0 {
 		r.result.Status = http.StatusOK
 	}
 
 	if r.result.Message == "" {
-		r.result.Message = "Success"
+		r.result.Message = r.localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: strconv.Itoa(r.result.Status),
+		})
 	}
-
-	r.result.Timestamp = time.Now()
 }
 
 func (r *ResponseBuilder[T]) Status(code int) *ResponseBuilder[T] {
@@ -64,8 +73,12 @@ func (r *ResponseBuilder[T]) Status(code int) *ResponseBuilder[T] {
 	return r
 }
 
-func (r *ResponseBuilder[T]) Message(message string) *ResponseBuilder[T] {
-	r.result.Message = message
+func (r *ResponseBuilder[T]) Message(messageID string, templateDataMaps ...map[string]any) *ResponseBuilder[T] {
+	r.result.Message = r.localizer.MustLocalize(&i18n.LocalizeConfig{
+		MessageID:    messageID,
+		TemplateData: lo.Assign(templateDataMaps...),
+	})
+
 	return r
 }
 

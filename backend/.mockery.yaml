@@ -1,0 +1,12 @@
+---
+dir: testing/mocks/{{.InterfaceDirRelative}}
+mockname: "{{.Mock}}{{.InterfaceName}}"
+outpkg: mock{{.PackageName}}
+filename: "{{.InterfaceName}}.go"
+all: true
+resolve-type-alias: false
+disable-version-string: true
+issue-845-fix: true
+recursive: true
+packages:
+  internal.snowdrop/common:
