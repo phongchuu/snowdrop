@@ -10,7 +10,7 @@ import (
 )
 
 func TestNewConfig(t *testing.T) {
-	appCfg, err := config.NewAppConfig(fstest.MapFS{})
+	appCfg, err := config.NewAppConfig(config.AppConfigParams{})
 	require.NoError(t, err)
 	assert.NotNil(t, appCfg)
 }
@@ -24,7 +24,9 @@ func TestGetDatabaseURL(t *testing.T) {
 	t.Setenv("APP_DB_NAME", "testdb")
 	t.Setenv("APP_DB_PORT", "5432")
 
-	appCfg, err := config.NewAppConfig(embedFS)
+	appCfg, err := config.NewAppConfig(config.AppConfigParams{
+		EmbedResourcesFolder: embedFS,
+	})
 	require.NoError(t, err)
 	assert.NotNil(t, appCfg)
 
@@ -34,7 +36,9 @@ func TestGetDatabaseURL(t *testing.T) {
 func TestGetEmbedResourceFolder(t *testing.T) {
 	var embedFS fstest.MapFS
 
-	appCfg, err := config.NewAppConfig(embedFS)
+	appCfg, err := config.NewAppConfig(config.AppConfigParams{
+		EmbedResourcesFolder: embedFS,
+	})
 	require.NoError(t, err)
 	assert.NotNil(t, appCfg)
 

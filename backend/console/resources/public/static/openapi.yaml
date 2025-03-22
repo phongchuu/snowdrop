@@ -5,8 +5,119 @@ info:
   title: Snowdrop
   version: 1.0.0
 
+components:
+  schemas:
+    HTTPCreatedCode:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: integer
+          description: HTTP status code
+          example: 201
+          readOnly: true
+
+    Response:
+      type: object
+      required:
+        - status
+        - message
+        - timestamp
+      properties:
+        status:
+          type: integer
+          description: HTTP status code
+          enum: [100, 200, 201, 204, 300, 400, 401, 403, 404, 500]
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+
 paths:
   /healthz:
     get:
+      description: Check the health of the service
       responses:
         "204":
+          description: No content, the service is healthy
+
+  /auth/register:
+    post:
+      description: Register a new user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 4
+                  maxLength: 255
+                email:
+                  type: string
+                  format: email
+                  minLength: 6
+                  maxLength: 255
+                password:
+                  type: string
+                  minLength: 6
+                  maxLength: 73
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - $ref: "#/components/schemas/HTTPCreatedCode"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required:
+                          - id
+                          - username
+                          - email
+                          - createdAt
+                          - createdBy
+                          - updatedAt
+                          - updatedBy
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            readOnly: true
+                          username:
+                            type: string
+                            example: tester
+                            readOnly: true
+                          email:
+                            type: string
+                            format: email
+                            example: tester@example.com
+                            readOnly: true
+                          createdAt:
+                            type: string
+                            format: date-time
+                            readOnly: true
+                          createdBy:
+                            type: string
+                            example: system
+                            readOnly: true
+                          updatedAt:
+                            type: [string, "null"]
+                            format: date-time
+                            readOnly: true
+                          updatedBy:
+                            type: [string, "null"]
+                            readOnly: true

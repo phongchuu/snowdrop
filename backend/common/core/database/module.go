@@ -1,6 +1,8 @@
 package database
 
-import "go.uber.org/fx"
+import (
+	"go.uber.org/fx"
+)
 
 // NewModule returns an fx.Option that provides the database module for the application.
 // It includes the necessary dependencies and invokes the database upgrade execution.

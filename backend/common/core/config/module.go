@@ -7,6 +7,8 @@ import (
 )
 
 type Manager interface {
+	IsDebugMode() bool
+
 	// GetEmbedResourceFolder returns the embedded resource folder as a filesystem (fs.FS).
 	// This folder contains the embedded resources used by the application.
 	GetEmbedResourceFolder() fs.FS
@@ -28,12 +30,15 @@ type Manager interface {
 //
 // Returns:
 //   - fx.Option: an Fx module option that provides the AppConfig instance.
-func NewModule(embedResourcesFolder fs.FS) fx.Option {
+func NewModule(debugMode bool, embedResourcesFolder fs.FS) fx.Option {
 	return fx.Module(
 		"ConfigModule",
 		fx.Provide(
 			fx.Annotate(func() (AppConfig, error) {
-				return NewAppConfig(embedResourcesFolder)
+				return NewAppConfig(AppConfigParams{
+					IsDebugMode:          debugMode,
+					EmbedResourcesFolder: embedResourcesFolder,
+				})
 			}, fx.As(new(Manager))),
 		),
 	)
