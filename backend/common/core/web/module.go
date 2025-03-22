@@ -12,7 +12,7 @@ func NewModule() fx.Option {
 		fx.Provide(
 			fx.Annotate(NewRouter, fx.As(new(http.Handler))),
 			newHTTPServer,
-			NewSchemaDecoder,
 		),
+		fx.Supply(NewValidator()),
 	)
 }

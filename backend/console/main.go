@@ -19,6 +19,7 @@ import (
 	"internal.snowdrop/common/features/healthz"
 	"internal.snowdrop/common/features/openapi"
 	"internal.snowdrop/common/features/staticfile"
+	"internal.snowdrop/common/features/usermgt"
 )
 
 var (
@@ -38,7 +39,7 @@ func main() {
 
 	fx.New(
 		fx.Supply(log.NewStdoutLogger(log.WithLogLevel(lo.Ternary(*isDebug, slog.LevelDebug, slog.LevelInfo)))),
-		config.NewModule(embedResourcesFolder),
+		config.NewModule(*isDebug, embedResourcesFolder),
 		database.NewModule(),
 		healthz.NewModule(),
 		auth.NewModule(),
@@ -46,6 +47,7 @@ func main() {
 		openapi.NewModule(),
 		staticfile.NewModule(),
 		trans.NewModule(),
+		usermgt.NewModule(),
 		fx.WithLogger(func(logger *slog.Logger) fxevent.Logger {
 			fxEventLogger := &fxevent.SlogLogger{
 				Logger: logger,

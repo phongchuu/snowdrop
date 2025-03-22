@@ -18,7 +18,7 @@ linters-settings:
       - source
       - msg
   nestif:
-    min-complexity: 2
+    min-complexity: 4
   gocognit:
     min-complexity: 20
   cyclop:

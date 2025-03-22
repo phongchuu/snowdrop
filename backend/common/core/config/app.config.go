@@ -10,11 +10,21 @@ import (
 
 // AppConfig is a struct that holds the application's configuration.
 type AppConfig struct {
+	isDebug              bool
 	viperInstance        *viper.Viper
 	embedResourcesFolder fs.FS
 }
 
+type AppConfigParams struct {
+	IsDebugMode          bool
+	EmbedResourcesFolder fs.FS
+}
+
 var _ Manager = (*AppConfig)(nil)
+
+func (appCfg AppConfig) IsDebugMode() bool {
+	return appCfg.isDebug
+}
 
 func (appCfg AppConfig) GetEmbedResourceFolder() fs.FS {
 	return appCfg.embedResourcesFolder
@@ -40,13 +50,14 @@ func (appCfg AppConfig) GetDatabaseURL() string {
 // Returns:
 //   - AppConfig: the initialized application configuration.
 //   - error: an error if the configuration setup fails.
-func NewAppConfig(embedResourcesFolder fs.FS) (AppConfig, error) {
+func NewAppConfig(p AppConfigParams) (AppConfig, error) {
 	viperInstance := viper.New()
 	viperInstance.SetEnvPrefix("app")
 	viperInstance.AutomaticEnv()
 
 	return AppConfig{
 		viperInstance:        viperInstance,
-		embedResourcesFolder: embedResourcesFolder,
+		isDebug:              p.IsDebugMode,
+		embedResourcesFolder: p.EmbedResourcesFolder,
 	}, nil
 }

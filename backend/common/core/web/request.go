@@ -3,16 +3,7 @@ package web
 import (
 	"net/http"
 	"strconv"
-
-	"github.com/gorilla/schema"
 )
-
-// NewSchemaDecoder creates and returns a new instance of schema.Decoder.
-// This decoder can be used to decode form values into Go structs.
-func NewSchemaDecoder() *schema.Decoder {
-	decoder := schema.NewDecoder()
-	return decoder
-}
 
 // GetPage retrieves the page number from the URL query parameters of the given HTTP request.
 // If the "page" parameter is not provided or cannot be converted to an integer,

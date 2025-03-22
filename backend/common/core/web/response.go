@@ -23,40 +23,34 @@ type Pagination struct {
 type Response[T any] struct {
 	Status     int        `json:"status"`
 	Message    string     `json:"message"`
+	Timestamp  time.Time  `json:"timestamp"`
 	Data       T          `json:"data,omitzero"`
 	Pagination Pagination `json:"pagination,omitzero"`
-	Timestamp  time.Time  `json:"timestamp"`
 }
 
-type ResponseBuilder[T any] struct {
+type ResponseBuilder struct {
 	w         http.ResponseWriter
 	r         *http.Request
 	localizer *i18n.Localizer
-	result    Response[T]
+	httpCode  int
+	result    Response[any]
 }
 
-func NewResponseBuilder(w http.ResponseWriter, r *http.Request) *ResponseBuilder[any] {
-	return &ResponseBuilder[any]{
+func NewResponseBuilder(w http.ResponseWriter, r *http.Request) *ResponseBuilder {
+	return &ResponseBuilder{
 		w:         w,
 		r:         r,
-		result:    Response[any]{},
 		localizer: trans.GetLocalizer(r),
+		httpCode:  http.StatusOK,
+		result:    Response[any]{},
 	}
 }
 
-func NewGenericResponseBuilder[T any](w http.ResponseWriter, r *http.Request) *ResponseBuilder[T] {
-	return &ResponseBuilder[T]{
-		w:      w,
-		r:      r,
-		result: Response[T]{},
-	}
-}
-
-func (r *ResponseBuilder[T]) setDefaults() {
+func (r *ResponseBuilder) setDefaults() {
 	r.result.Timestamp = time.Now()
 
 	if r.result.Status == 0 {
-		r.result.Status = http.StatusOK
+		r.result.Status = r.httpCode
 	}
 
 	if r.result.Message == "" {
@@ -66,28 +60,34 @@ func (r *ResponseBuilder[T]) setDefaults() {
 	}
 }
 
-func (r *ResponseBuilder[T]) Status(code int) *ResponseBuilder[T] {
-	r.w.WriteHeader(code)
+func (r *ResponseBuilder) Status(code int) *ResponseBuilder {
+	r.httpCode = code
 	r.result.Status = code
 
 	return r
 }
 
-func (r *ResponseBuilder[T]) Message(messageID string, templateDataMaps ...map[string]any) *ResponseBuilder[T] {
-	r.result.Message = r.localizer.MustLocalize(&i18n.LocalizeConfig{
+func (r *ResponseBuilder) Message(messageID string, templateDataMaps ...map[string]any) *ResponseBuilder {
+	translatedMessge, err := r.localizer.Localize(&i18n.LocalizeConfig{
 		MessageID:    messageID,
 		TemplateData: lo.Assign(templateDataMaps...),
 	})
 
+	if err != nil {
+		r.result.Message = messageID
+	} else {
+		r.result.Message = translatedMessge
+	}
+
 	return r
 }
 
-func (r *ResponseBuilder[T]) Data(data T) *ResponseBuilder[T] {
+func (r *ResponseBuilder) Data(data any) *ResponseBuilder {
 	r.result.Data = data
 	return r
 }
 
-func (r *ResponseBuilder[T]) Pagination(totalRows int) *ResponseBuilder[T] {
+func (r *ResponseBuilder) Pagination(totalRows int) *ResponseBuilder {
 	pageSize := GetPageSize(r.r)
 
 	r.result.Pagination = Pagination{
@@ -100,7 +100,11 @@ func (r *ResponseBuilder[T]) Pagination(totalRows int) *ResponseBuilder[T] {
 	return r
 }
 
-func (r *ResponseBuilder[T]) JSON() {
+func (r *ResponseBuilder) NoContent() {
+	r.w.WriteHeader(http.StatusNoContent)
+}
+
+func (r *ResponseBuilder) JSON() {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 
@@ -113,11 +117,13 @@ func (r *ResponseBuilder[T]) JSON() {
 
 	r.w.Header().Set("Content-Type", "application/json")
 	r.w.Header().Set("X-Content-Type-Options", "nosniff")
+	r.w.WriteHeader(r.result.Status)
 	_, _ = r.w.Write(buf.Bytes())
 }
 
-func (r *ResponseBuilder[T]) HTML(html string) {
+func (r *ResponseBuilder) HTML(html string) {
 	r.w.Header().Set("Content-Type", "text/html")
 	r.w.Header().Set("X-Content-Type-Options", "nosniff")
+	r.w.WriteHeader(r.httpCode)
 	_, _ = r.w.Write([]byte(html))
 }
