@@ -40,4 +40,11 @@ FOR EACH ROW
 EXECUTE FUNCTION audit_timestamp_trigger();
 
 INSERT INTO public.users (id, username, email, password)
-VALUES ('00000000-0000-0000-0000-000000000001', 'admin', 'admin@internal.com', crypt('Keep!t5ecret', gen_salt('bf', 12)));
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  'admin',
+  'admin@internal.com',
+-- +goose ENVSUB ON
+  crypt('${APP_DEFAULT_ADMIN_PASSWORD?Missing env: APP_DEFAULT_ADMIN_PASSWORD}', gen_salt('bf', 12))
+-- +goose ENVSUB OFF
+);
