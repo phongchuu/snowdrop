@@ -12,14 +12,49 @@ reviews:
   high_level_summary_in_walkthrough: false
   auto_title_placeholder: "@coderabbitai"
   auto_title_instructions: |
-    1. Be Descriptive - Write a title that clearly and specifically explains what the pull request accomplishes, keeping it between 50 and 72 characters to fit neatly in tools like GitHub, GitLab, or Bitbucket. The title should instantly tell the reader the purpose of the change without requiring them to read the PR description or code. For example, "Add user authentication middleware to secure login routes" is descriptive because it states what is being added (middleware) and why (to secure login routes), making the intent obvious to reviewers.
-    2. Use Imperative Mood - Phrase the title as a direct command or instruction, as if you are telling the codebase what to do, rather than stating what has already been done. This follows standard conventions in git commit messages and pull requests, ensuring consistency and a professional tone. For example, write "Fix bug in payment processing" instead of "Fixed bug in payment processing" or "Bug in payment processing was fixed". The imperative mood focuses on action. Example: "Fix bug in payment processing that caused duplicate charges".
-    3. Include Context - Specify the exact part of the project affected by the change, such as the feature, bug, module, component, or subsystem being worked on. This gives reviewers immediate insight into the scope and relevance of the pull request, avoiding vague or generic titles. For instance, "Update API endpoint for user profile retrieval" is better than "Update code" because it names the specific API endpoint and functionality involved. Example: "Update API endpoint for user profile to include email field".
-    4. Add Reference (if applicable) - If the pull request relates to a tracked issue, bug, or task in a system like Jira, GitHub Issues, or another tool, include the reference number (e.g., #123, BUG-456) in the title. This links the PR to its origin, making it easier for team members to trace the work and understand its purpose. Only add this if there's a relevant reference—don't invent one if it doesn't apply. Example: "Resolve login timeout issue #123 by increasing session duration".
-    5. Keep It Concise - Make the title short and focused, avoiding unnecessary words, long explanations, or redundant details that could make it harder to read quickly. The title should summarize the change effectively while leaving in-depth explanations or technical notes for the PR description or comments. For example, "Remove deprecated login API calls from authentication service" is concise and clear, whereas "Remove all the old and deprecated login API calls that we don't need anymore from the authentication service" is too wordy. Example: "Remove deprecated login API calls cleanly".
-    6. Avoid Jargon or Abbreviations - Use plain, standard language that everyone on the team can understand, avoiding project-specific slang, acronyms, or abbreviations unless they are widely recognized (e.g., API, UI). This ensures the title is accessible to all reviewers, including new team members or external contributors. For example, "Add validation to user input form" is clearer than "Add val to usr inp frm". Example: "Add validation to user input form for required fields".
-    7. Indicate Type of Change - Where possible, hint at the nature of the change (e.g., adding, fixing, removing, refactoring) to give reviewers a sense of what to expect. This can often be achieved through the verb you choose in the imperative mood. For example, "Add" suggests new functionality, "Fix" indicates a bug correction, "Refactor" implies improvement without functional change. Example: "Refactor database query logic for better performance".
-    8. Be Consistent with Team Style - Follow any existing naming conventions or patterns your team or project uses for PR titles, such as starting with a specific keyword, using a particular format, or aligning with a style guide. Consistency helps automate processes (like CI/CD checks) and makes titles predictable for the team. For example, if your team uses "[Feature] Add X" for new features, stick to that: "[Feature] Add notification system for user alerts".
+    1. Start with a Specific Verb
+      - Use action words like "Add", "Fix", "Update", or "Remove" to indicate the change.
+      - Example: "Add email validation to signup form".
+
+    2. Describe the Affected Object or Component
+      - Specify the part of the code or feature being modified.
+      - Example: "Fix button styling in header navigation component".
+
+    3. Add Brief Details About the Change
+      - Include a short description (under 10 words) of what's being done.
+      - Example: "Update API endpoint to handle timeout errors".
+
+    4. Use Reference Numbers If Available
+      - Add issue or ticket numbers like "BUG-123" for context.
+      - Example: "Remove unused CSS classes from styles (DES-456)".
+
+    5. Ensure Title Length is 50-80 Characters
+      - Keep the title between 50 and 80 characters for readability.
+      - Example: "Add user authentication middleware to login flow" (50 characters).
+
+    6. Capitalize the First Letter
+      - Begin with a capital letter, keep the rest lowercase.
+      - Example: "Fix login error message display on mobile devices".
+
+    7. Use Present Tense
+      - Write as if the action is happening now, not past or future.
+      - Example: "Add loading spinner to checkout page for better UX".
+
+    8. Check If the Title is Easy to Understand
+      - Ensure it's clear to someone unfamiliar with the code.
+      - Example: "Update database schema to include user profile fields".
+
+    9. Indicate Breaking Changes
+      - Add "[BREAKING]" if the change breaks existing functionality.
+      - Example: "[BREAKING] Remove support for Python 2.7 in backend".
+
+    10. Use Relevant Keywords
+        - Include searchable terms for future reference.
+        - Example: "Implement caching mechanism for API request performance".
+
+    11. Avoid Special Characters
+        - Skip symbols like #, @, $, etc., unless required, to avoid issues.
+        - Example: "Fix issue 123 in payment module" (not "Fix issue#123").
   review_status: true
   commit_status: true
   fail_commit_status: false
@@ -35,28 +70,38 @@ reviews:
   auto_assign_reviewers: true
   poem: false
   labeling_instructions:
+    - label: blocked
+      instructions: Assign to a PR that cannot proceed due to an external dependency, such as another PR, an upstream issue, or a third-party library update.
+    - label: needs clarification
+      instructions: Assign to a PR where the description or changes are unclear and require more details from the author before review can proceed.
+    - label: waiting for maintainer
+      instructions: Assign to a PR that is complete but awaiting a maintainer's review, approval, or merge action.
     - label: bug
-      instructions: "Assign this label if the PR title or description contains keywords like 'fix', 'bug', 'issue', 'error', 'resolve', or 'defect'. Example: 'Fix login error' → Assign 'bug'."
-    - label: dependencies
-      instructions: "Assign this label if the PR modifies dependency files (e.g., 'go.mod', 'go.sum', 'package.json', 'requirements.txt') or if the description mentions 'update dependency', 'upgrade library', or similar. Example: 'Update pgx to v5' → Assign 'dependencies'."
-    - label: design
-      instructions: "Assign this label if the PR modifies UI/UX-related files (e.g., CSS, HTML, React components, design system files) or if the description mentions 'UI', 'UX', 'design', 'style', 'layout', or 'frontend'. Example: 'Redesign login page' → Assign 'design'."
+      instructions: Do not assign to PRs. This label is for issues reporting errors or unexpected behavior. Use 'fix' for PRs addressing bugs.
+    - label: discussion
+      instructions: Do not assign to PRs. This label is for issues involving general discussions. Use comments in the PR for discussions.
     - label: documentation
-      instructions: "Assign this label if the PR modifies documentation files (e.g., 'README.md', '.md' files, or code comments) or if the description mentions 'docs', 'documentation', 'readme', or 'update comments'. Example: 'Update API docs' → Assign 'documentation'."
+      instructions: Assign to a PR that updates, improves, or adds documentation, such as README files, API docs, or user guides.
+    - label: duplicate
+      instructions: Assign to a PR that duplicates another PR's changes or purpose. Link the duplicated PR in the comments.
     - label: enhancement
-      instructions: "Assign this label if the PR introduces new features or improvements, or if the description contains keywords like 'add', 'new', 'feature', 'enhance', 'improve', or 'upgrade'. Example: 'Add user profile feature' → Assign 'enhancement'."
-    - label: hotfix
-      instructions: "Assign this label if the PR description mentions 'hotfix', 'urgent', 'production', 'emergency', or 'critical', or if the PR targets a production branch (e.g., 'main', 'prod') with minimal changes. Example: 'Hotfix for payment failure in prod' → Assign 'hotfix'."
-    - label: on hold
-      instructions: "Assign this label if the PR description mentions 'on hold', 'paused', 'waiting', or 'blocked', or if the PR has been inactive for 7 days with no updates. Example: 'Waiting for backend API, on hold' → Assign 'on hold'."
-    - label: performance
-      instructions: "Assign this label if the PR description mentions 'performance', 'optimize', 'speed', 'efficiency', or 'faster', or if the code changes involve performance improvements (e.g., query optimization, caching). Example: 'Optimize database query' → Assign 'performance'."
-    - label: refactor
-      instructions: "Assign this label if the PR description mentions 'refactor', 'restructure', 'cleanup', 'simplify', or 'optimize' without adding features, or if the code changes involve restructuring without functional changes. Example: 'Refactor user service' → Assign 'refactor'."
-    - label: testing
-      instructions: "Assign this label if the PR modifies test files (e.g., 'test/' directory, '*_test.go' files) or if the description mentions 'test', 'testing', 'unit test', 'integration test', or 'add test'. Example: 'Add unit tests for user service' → Assign 'testing'."
-    - label: wip
-      instructions: "Assign this label if the PR title or description contains 'WIP', 'work in progress', 'draft', or 'not ready', or if the PR is marked as a draft. Example: 'WIP: User authentication' → Assign 'wip'."
+      instructions: Assign to a PR that improves an existing feature, such as optimizing performance or enhancing user experience, without adding new functionality.
+    - label: feature
+      instructions: Assign to a PR that implements a new feature or functionality in the codebase.
+    - label: fix
+      instructions: Assign to a PR that resolves a reported bug or fixes unexpected behavior in the codebase.
+    - label: invalid
+      instructions: Assign to a PR that is not valid, such as one based on incorrect assumptions, or does not align with project goals.
+    - label: needs testcase
+      instructions: Assign to a PR that is missing unit tests or integration tests required to validate the changes.
+    - label: question
+      instructions: Do not assign to PRs. This label is for issues asking questions about the project. Use comments in the PR for clarifications.
+    - label: regression
+      instructions: Assign to a PR that fixes a bug causing a previously working feature to break, often introduced by a recent change.
+    - label: security
+      instructions: Assign to a PR that addresses a security vulnerability, such as patching an exploit or fixing a data leak.
+    - label: wontfix
+      instructions: Assign to a PR that the team decides not to merge, often because it does not align with project goals or is too complex to implement.
   path_filters: []
   path_instructions: []
   abort_on_close: true
