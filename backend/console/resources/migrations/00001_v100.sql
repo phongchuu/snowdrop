@@ -45,7 +45,7 @@ EXECUTE FUNCTION audit_timestamp_trigger();
 
 INSERT INTO public.users (id, username, email, password)
 VALUES (
-  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-7000-8000-000000000000',
   'admin',
   'admin@internal.com',
 -- +goose ENVSUB ON
