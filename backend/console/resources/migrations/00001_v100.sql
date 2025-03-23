@@ -20,10 +20,10 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE plpgsql;
 -- +goose StatementEnd
 
-CREATE TABLE IF NOT EXISTS public.users(
+CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY,
   username VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL,
@@ -33,6 +33,10 @@ CREATE TABLE IF NOT EXISTS public.users(
   updated_at TIMESTAMPTZ,
   updated_by VARCHAR(255)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_username_email
+ON public.users
+USING btree (username, email);
 
 CREATE TRIGGER trg_users_update_audit_timestamp
 BEFORE INSERT OR UPDATE ON public.users
