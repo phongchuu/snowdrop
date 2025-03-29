@@ -11,7 +11,7 @@ require (
 	github.com/nicksnyder/go-i18n/v2 v2.5.1
 	github.com/pressly/goose/v3 v3.24.1
 	github.com/samber/lo v1.49.1
-	github.com/spf13/viper v1.20.0
+	github.com/spf13/viper v1.20.1
 	go.uber.org/fx v1.23.0
 	golang.org/x/crypto v0.36.0
 	golang.org/x/text v0.23.0
