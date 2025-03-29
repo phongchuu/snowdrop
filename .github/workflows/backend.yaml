@@ -48,7 +48,7 @@ jobs:
           }
 
           echo "go mod tidy succeeded."
-      - if: ${{ matrix.path == "backend/testing" }}
+      - if: ${{ matrix.path == 'backend/testing' }}
         working-directory: ${{ matrix.path }}
         run: |
           go tool mockery
