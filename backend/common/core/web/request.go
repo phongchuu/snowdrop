@@ -12,7 +12,6 @@ import (
 // it also returns the default page number.
 func GetPage(r *http.Request) int {
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-
 	if err != nil {
 		return defaultPage
 	}
@@ -32,7 +31,6 @@ func GetPage(r *http.Request) int {
 // it returns the maximum page size.
 func GetPageSize(r *http.Request) int {
 	pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
-
 	if err != nil {
 		return defaultPageSize
 	}

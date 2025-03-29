@@ -25,10 +25,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        path:
-          - backend/common
-          - backend/console
-          - backend/testing
+        dir: [backend]
+        module: [common, console, testing]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,7 +36,7 @@ jobs:
           go-version-file: ./backend/go.work
           cache-dependency-path: backend/**/*.sum
       - name: Verify dependencies
-        working-directory: ${{ matrix.path }}
+        working-directory: ${{ matrix.dir }}/${{ matrix.module }}
         run: |
           go mod tidy || {
             echo "go mod tidy failed."
@@ -52,8 +50,8 @@ jobs:
 
           echo "go mod tidy succeeded."
       - name: Generate and verify mocks
-        if: ${{ matrix.path == 'backend/testing' }}
-        working-directory: ${{ matrix.path }}
+        if: ${{ matrix.module == 'testing' }}
+        working-directory: ${{ matrix.dir }}/${{ matrix.module }}
         run: |
           go tool mockery
 
@@ -62,11 +60,18 @@ jobs:
             exit 1
           }
       - name: Run golangci-linter
-        uses: golangci/golangci-lint-action@4696ba8babb6127d732c3c6dde519db15edab9ea
+        uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd
         with:
-          version: v1.64.8
-          working-directory: ${{ matrix.path }}
-          args: --config=../.golangci.yaml
+          version: v2.0.2
+          problem-matchers: true
+          working-directory: ${{ matrix.dir }}/${{ matrix.module }}
+          args: --config=../.golangci.yaml --output.sarif.path ${{ matrix.module }}/report.sarif
+      - name: Upload report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ matrix.dir }}/${{ matrix.module }}/report.sarif
+          wait-for-processing: true
 
   unit-test:
     name: Unit test

@@ -34,7 +34,10 @@ func (u UserRepositoryImpl) CreateUser(
 	ctx context.Context,
 	setter UserSetter,
 ) (*UserModel, error) {
-	tx, owner, err := database.GetTransaction(ctx, lo.Ternary[database.Database](u.tx == nil, u.db, u.tx))
+	tx, owner, err := database.GetTransaction(
+		ctx,
+		lo.Ternary[database.Database](u.tx == nil, u.db, u.tx),
+	)
 	if err != nil {
 		return nil, err
 	}

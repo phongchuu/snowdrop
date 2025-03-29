@@ -23,6 +23,8 @@ import (
 )
 
 func TestRegisterRoute(t *testing.T) {
+	t.Parallel()
+
 	registerRoute := auth.NewRegisterRoute(auth.RegisterRouteParams{
 		Validator:   web.NewValidator(),
 		UserService: mockusermgt.NewMockUserService(t),
@@ -36,6 +38,8 @@ func TestRegisterRoute(t *testing.T) {
 }
 
 func TestRegisterRouteServeHTTP(t *testing.T) {
+	t.Parallel()
+
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -61,7 +65,9 @@ func TestRegisterRouteServeHTTP(t *testing.T) {
 
 	mock.MatchExpectationsInOrder(true)
 	mock.ExpectBegin()
-	mock.ExpectExec(`SELECT set_config`).WithArgs(sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec(`SELECT set_config`).
+		WithArgs(sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectQuery(`INSERT INTO public.users`).
 		WithArgs(sqlmock.AnyArg(), "admin", "admin@internal.com", sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"created_at", "created_by"}).AddRow(time.Now(), "system"))
