@@ -10,6 +10,7 @@ type TransactionManagerImpl struct {
 	db *sql.DB
 }
 
+// NewTransactionManager constructs a new TransactionManagerImpl using the provided database connection.
 func NewTransactionManager(db *sql.DB) *TransactionManagerImpl {
 	return &TransactionManagerImpl{db: db}
 }
@@ -52,7 +53,11 @@ func (m TransactionManagerImpl) GetCurrentTx(ctx context.Context) *sql.Tx {
 	return nil
 }
 
-// executeTx is the core transaction handler.
+// executeTx executes a transactional operation by running the specified callback within a database transaction.
+// It first checks if a transaction is already available in the context; if so, it uses the existing transaction.
+// Otherwise, it begins a new transaction with the provided options and attaches it to the context.
+// The function ensures that the transaction is committed on success or rolled back if an error occurs or a panic is recovered,
+// returning either the result of the callback or an error if any part of the transaction process fails.
 func executeTx[T any](
 	ctx context.Context,
 	transactionManager TransactionManager,
@@ -104,6 +109,9 @@ func executeTx[T any](
 	return result, nil
 }
 
+// RunTx executes the provided transaction function within a managed transaction context using default options.
+// It wraps the function to run within a transaction, ensuring that a new transaction is started if one does not already exist.
+// The function commits the transaction on success or rolls it back if an error occurs, returning any encountered error.
 func RunTx(
 	ctx context.Context,
 	transactionManager TransactionManager,
@@ -121,6 +129,9 @@ func RunTx(
 	return err
 }
 
+// RunTxWithOptions executes the provided function within a new transaction configured with the specified options.
+// It begins a transaction using the given *sql.TxOptions and delegates execution to a transactional context that
+// commits on success or rolls back if an error is encountered.
 func RunTxWithOptions(
 	ctx context.Context,
 	transactionManager TransactionManager,
@@ -139,6 +150,8 @@ func RunTxWithOptions(
 	return err
 }
 
+// RunTxWithData executes the provided function within a new transaction and returns its result of type T.
+// It wraps executeTx with no explicit transaction options, automatically handling commit and rollback.
 func RunTxWithData[T any](
 	ctx context.Context,
 	transactionManager TransactionManager,
@@ -147,6 +160,9 @@ func RunTxWithData[T any](
 	return executeTx(ctx, transactionManager, nil, fn)
 }
 
+// RunTxWithDataAndOptions executes a data-returning function within a managed transaction using the provided SQL transaction options.
+// It ensures that the transactional function is run in a context where the transaction is committed on success or rolled back on failure,
+// returning the result of type T along with any error encountered during the transaction lifecycle.
 func RunTxWithDataAndOptions[T any](
 	ctx context.Context,
 	transactionManager TransactionManager,

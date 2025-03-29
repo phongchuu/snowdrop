@@ -22,6 +22,7 @@ type UserRepositoryParams struct {
 
 var _ UserRepository = (*UserRepositoryImpl)(nil)
 
+// NewUserRepository returns a new UserRepositoryImpl configured with the TransactionManager provided in UserRepositoryParams.
 func NewUserRepository(p UserRepositoryParams) UserRepositoryImpl {
 	return UserRepositoryImpl{
 		txMgr: p.TransactionManager,

@@ -71,7 +71,9 @@ func (_c *MockTxFunc_Execute_Call) RunAndReturn(run func(context.Context, *sql.T
 }
 
 // NewMockTxFunc creates a new instance of MockTxFunc. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
+// NewMockTxFunc creates a new MockTxFunc instance and sets up automatic verification of its expectations.
+// It accepts a testing interface (typically a *testing.T) and registers a cleanup callback to assert that
+// all expected calls on the mock are fulfilled once the test completes.
 func NewMockTxFunc(t interface {
 	mock.TestingT
 	Cleanup(func())

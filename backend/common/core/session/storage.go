@@ -21,6 +21,8 @@ type PostgresRepository struct {
 
 var _ Repository = (*PostgresRepository)(nil)
 
+// NewPostgresRepository creates a new instance of PostgresRepository with the provided transaction manager.
+// It initializes the repository for executing transactional operations on session data within a PostgreSQL database.
 func NewPostgresRepository(transactionManager database.TransactionManager) *PostgresRepository {
 	return &PostgresRepository{
 		txMgr: transactionManager,

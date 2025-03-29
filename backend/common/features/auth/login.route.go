@@ -30,6 +30,8 @@ type LoginFormData struct {
 
 var _ web.HTTPHandler = (*LoginRoute)(nil)
 
+// NewLoginRoute constructs a new LoginRoute by extracting its dependencies from the provided LoginRouteParams.
+// It assigns the validator, user service, and session manager necessary for processing login requests.
 func NewLoginRoute(p LoginRouteParams) LoginRoute {
 	return LoginRoute{
 		validator:      p.Validator,

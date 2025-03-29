@@ -83,7 +83,7 @@ func (_c *MockTxDataFunc_Execute_Call[T]) RunAndReturn(run func(context.Context,
 }
 
 // NewMockTxDataFunc creates a new instance of MockTxDataFunc. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
+// NewMockTxDataFunc creates a new instance of MockTxDataFunc for simulating transactional operations in tests. It initializes the underlying mock with the provided testing interface (typically a *testing.T) and registers a cleanup function to automatically assert that all expected mock calls have occurred once the test completes.
 func NewMockTxDataFunc[T any](t interface {
 	mock.TestingT
 	Cleanup(func())

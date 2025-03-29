@@ -53,7 +53,10 @@ func HTTPRoute(function any) any {
 	)
 }
 
-// NewRouter initializes and returns a new HTTP router instance.
+// NewRouter creates and configures a Chi router instance using the supplied route parameters.
+// It divides HTTP routes into public and private groups based on their tags and applies
+// a set of middlewares sorted by priority: path cleaning, internationalization,
+// session management, and a request timeout. The returned router is ready for use in handling HTTP requests.
 func NewRouter(params RouteParams) *chi.Mux {
 	r := chi.NewRouter()
 

@@ -24,6 +24,9 @@ type UserSetter struct {
 	Password string
 }
 
+// ToUserDTO converts a store.UserModel instance into a UserDTO by mapping its fields.
+// It transfers the core user details and conditionally assigns the UpdatedAt and UpdatedBy fields as pointers
+// if their corresponding values are valid.
 func ToUserDTO(model store.UserModel) UserDTO {
 	return UserDTO{
 		ID:        model.ID,

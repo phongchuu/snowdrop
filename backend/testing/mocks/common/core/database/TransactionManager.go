@@ -131,7 +131,9 @@ func (_c *MockTransactionManager_NewTransaction_Call) RunAndReturn(run func(cont
 }
 
 // NewMockTransactionManager creates a new instance of MockTransactionManager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
+// NewMockTransactionManager creates and returns a new MockTransactionManager for use in tests.
+// It initializes the internal mock using the provided testing interface and registers a cleanup callback
+// to assert that all expected interactions occurred when the test concludes.
 func NewMockTransactionManager(t interface {
 	mock.TestingT
 	Cleanup(func())

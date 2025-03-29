@@ -142,7 +142,11 @@ func (_c *MockUserService_Login_Call) RunAndReturn(run func(context.Context, str
 }
 
 // NewMockUserService creates a new instance of MockUserService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
+// NewMockUserService creates and returns a new instance of MockUserService for testing.
+// 
+// It initializes the mock, registers it with the provided testing interface, and sets up a
+// cleanup callback to automatically assert that all expected mock interactions occurred at
+// the end of the test. The parameter 't' is typically a *testing.T instance.
 func NewMockUserService(t interface {
 	mock.TestingT
 	Cleanup(func())

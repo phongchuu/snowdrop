@@ -45,6 +45,7 @@ var (
 	AppReleaseDate string
 )
 
+// main is the entry point for the application. It sets the local time to UTC, parses command-line flags to determine the debug mode, and initializes an Fx application with a suite of modules (configuration, database, health checks, authentication, web server, OpenAPI, session management, static file serving, translation, and user management). It also configures a custom logger for Fx events and logs application metadata (version, revision, and release date) before starting the application's lifecycle.
 func main() {
 	time.Local = time.UTC
 

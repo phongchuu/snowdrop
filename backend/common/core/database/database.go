@@ -16,6 +16,7 @@ import (
 	"internal.snowdrop/common/core/config"
 )
 
+// newDatabase creates a new SQL database connection using the URL from the configuration manager. It parses the database URL, configures a connection pool with tracing enabled, and registers lifecycle hooks to ping the connection on startup and close it on shutdown.
 func newDatabase(
 	lc fx.Lifecycle,
 	logger *slog.Logger,
@@ -78,7 +79,7 @@ func executeDatabaseUpgrade(
 
 // GenerateUUIDv7PgType generates a new UUID version 7 and returns it as a pgtype.UUID.
 // If there is an error generating the UUID, the function will panic.
-// The returned pgtype.UUID will have the generated UUID bytes and will be marked as valid.
+// GenerateUUIDv7PgType generates a new version 7 UUID and returns it as a pgtype.UUID. The returned UUID is marked as valid and the function panics if UUID generation fails.
 func GenerateUUIDv7PgType() pgtype.UUID {
 	uuid, err := uuid.NewV7()
 	if err != nil {

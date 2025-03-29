@@ -289,7 +289,9 @@ func (_c *MockRepository_UpdateSession_Call) RunAndReturn(run func(context.Conte
 }
 
 // NewMockRepository creates a new instance of MockRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
+// NewMockRepository creates a new instance of MockRepository for testing purposes.
+// It initializes the embedded mock with the provided testing interface (typically *testing.T)
+// and registers a cleanup function to automatically assert that all expected mock calls were made.
 func NewMockRepository(t interface {
 	mock.TestingT
 	Cleanup(func())

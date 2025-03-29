@@ -9,7 +9,10 @@ import (
 //
 // The module includes:
 // - fx.Provide(newDatabase): Provides the database instance.
-// - fx.Invoke(executeDatabaseUpgrade): Executes the database upgrade process.
+// NewModule creates an fx.Option that sets up the database module for the application.
+// It provides a new database instance via newDatabase and an annotated TransactionManager,
+// ensuring that the TransactionManager is correctly recognized by the dependency injection system.
+// The module also invokes executeDatabaseUpgrade to perform any required database upgrades during initialization.
 func NewModule() fx.Option {
 	return fx.Module(
 		"DatabaseModule",

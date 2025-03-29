@@ -44,6 +44,8 @@ type ManagerParams struct {
 
 const sessionCtxKey ctxKey = 0
 
+// NewManager creates a new Manager instance with default session configuration values and starts a background cleanup routine to remove expired sessions.
+// It sets inactivity and maximum timeout durations, cookie parameters, and initializes the session repository and transaction manager using the provided ManagerParams.
 func NewManager(p ManagerParams) *Manager {
 	m := &Manager{
 		config: Config{
@@ -226,6 +228,7 @@ func (m *Manager) cleanupExpiredSessions() {
 	}
 }
 
+// generateSessionID generates a new session identifier using 32 bytes of cryptographically secure random data and encodes it in URL-safe base64 format. It returns the session ID and an error if the random data generation fails.
 func generateSessionID() (string, error) {
 	b := make([]byte, 32)
 
