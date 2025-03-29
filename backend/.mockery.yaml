@@ -1,5 +1,5 @@
 ---
-dir: testing/mocks/{{.InterfaceDirRelative}}
+dir: mocks/{{.PackagePath}}
 mockname: "{{.Mock}}{{.InterfaceName}}"
 outpkg: mock{{.PackageName}}
 filename: "{{.InterfaceName}}.go"
@@ -8,5 +8,6 @@ resolve-type-alias: false
 disable-version-string: true
 issue-845-fix: true
 recursive: true
+disable-func-mocks: true
 packages:
   internal.snowdrop/common:
