@@ -36,8 +36,14 @@ func NewUserService(userRepository UserRepository) UserServiceImpl {
 	}
 }
 
-func (u UserServiceImpl) CreateUser(ctx context.Context, createUserDTO CreateUserDTO) (*UserDTO, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(createUserDTO.RawPassword), bcrypt.DefaultCost)
+func (u UserServiceImpl) CreateUser(
+	ctx context.Context,
+	createUserDTO CreateUserDTO,
+) (*UserDTO, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword(
+		[]byte(createUserDTO.RawPassword),
+		bcrypt.DefaultCost,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +53,6 @@ func (u UserServiceImpl) CreateUser(ctx context.Context, createUserDTO CreateUse
 		Email:    createUserDTO.Email,
 		Password: string(hashedPassword),
 	})
-
 	if err != nil {
 		return nil, err
 	}

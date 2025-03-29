@@ -12,6 +12,8 @@ import (
 )
 
 func TestHealthCheckRoute(t *testing.T) {
+	t.Parallel()
+
 	router := web.NewRouter(web.RouteParams{
 		HTTPRoutes: []web.HTTPHandler{healthz.NewHealthCheckRoute()},
 	})
@@ -20,6 +22,8 @@ func TestHealthCheckRoute(t *testing.T) {
 }
 
 func TestHealthCheckRouteServeHTTP(t *testing.T) {
+	t.Parallel()
+
 	healthzRoute := healthz.NewHealthCheckRoute()
 	router := web.NewRouter(web.RouteParams{
 		HTTPRoutes: []web.HTTPHandler{healthzRoute},

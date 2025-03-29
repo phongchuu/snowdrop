@@ -17,13 +17,18 @@ import (
 )
 
 func TestResponseBuilder(t *testing.T) {
+	t.Parallel()
+
 	config := mockconfig.NewMockManager(t)
 	config.EXPECT().GetEmbedResourceFolder().Return(testutils.GetResourceFS())
 	bundle, err := trans.NewI18nBundle(config)
 	require.NoError(t, err)
 
 	w := httptest.NewRecorder()
-	r := trans.WithLocalizer(httptest.NewRequest(http.MethodGet, "/", nil), i18n.NewLocalizer(bundle))
+	r := trans.WithLocalizer(
+		httptest.NewRequest(http.MethodGet, "/", nil),
+		i18n.NewLocalizer(bundle),
+	)
 
 	web.NewResponseBuilder(w, r).
 		Status(http.StatusOK).

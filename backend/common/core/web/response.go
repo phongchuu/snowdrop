@@ -67,7 +67,10 @@ func (r *ResponseBuilder) Status(code int) *ResponseBuilder {
 	return r
 }
 
-func (r *ResponseBuilder) Message(messageID string, templateDataMaps ...map[string]any) *ResponseBuilder {
+func (r *ResponseBuilder) Message(
+	messageID string,
+	templateDataMaps ...map[string]any,
+) *ResponseBuilder {
 	translatedMessge, err := r.localizer.Localize(&i18n.LocalizeConfig{
 		MessageID:    messageID,
 		TemplateData: lo.Assign(templateDataMaps...),
@@ -84,6 +87,7 @@ func (r *ResponseBuilder) Message(messageID string, templateDataMaps ...map[stri
 
 func (r *ResponseBuilder) Data(data any) *ResponseBuilder {
 	r.result.Data = data
+
 	return r
 }
 
@@ -112,6 +116,7 @@ func (r *ResponseBuilder) JSON() {
 
 	if err := enc.Encode(r.result); err != nil {
 		http.Error(r.w, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 

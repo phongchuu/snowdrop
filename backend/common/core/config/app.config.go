@@ -37,7 +37,13 @@ func (appCfg AppConfig) GetDatabaseURL() string {
 	dbName := appCfg.viperInstance.GetString("db_name")
 	dbPort := appCfg.viperInstance.GetString("db_port")
 
-	return fmt.Sprintf("postgresql://%s:%s@%s/%s", username, password, net.JoinHostPort(dbHost, dbPort), dbName)
+	return fmt.Sprintf(
+		"postgresql://%s:%s@%s/%s",
+		username,
+		password,
+		net.JoinHostPort(dbHost, dbPort),
+		dbName,
+	)
 }
 
 // NewAppConfig initializes a new AppConfig instance with the provided embedded resources folder.

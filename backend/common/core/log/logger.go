@@ -34,6 +34,7 @@ func WithLogAttr(parent context.Context, attr slog.Attr) context.Context {
 
 	if v, ok := parent.Value(slogFieldsCtxID).([]slog.Attr); ok {
 		v = append(v, attr)
+
 		return context.WithValue(parent, slogFieldsCtxID, v)
 	}
 

@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net"
 	"net/http"
@@ -117,7 +118,7 @@ func newHTTPServer(
 			logger.InfoContext(ctx, "Starting HTTP server at: "+srv.Addr)
 
 			go func() {
-				if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
+				if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 					logger.ErrorContext(ctx, "HTTP server serve error: ", log.ErrorLogAttr(err))
 				}
 			}()

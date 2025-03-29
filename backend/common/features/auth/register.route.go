@@ -22,7 +22,7 @@ type RegisterRouteParams struct {
 
 type RegisterFormData struct {
 	Username string `json:"username" validate:"required,min=4,max=255"`
-	Email    string `json:"email" validate:"required,email,min=6,max=255"`
+	Email    string `json:"email"    validate:"required,email,min=6,max=255"`
 	Password string `json:"password" validate:"required,min=6,max=73"`
 }
 
@@ -59,6 +59,7 @@ func (registerRoute RegisterRoute) ServeHTTP(w http.ResponseWriter, r *http.Requ
 
 	if err := binder.JSON(r, &formData); err != nil {
 		response.Status(http.StatusBadRequest).Message(err.Error()).JSON()
+
 		return
 	}
 
@@ -67,9 +68,9 @@ func (registerRoute RegisterRoute) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		RawPassword: formData.Password,
 		Email:       formData.Email,
 	})
-
 	if err != nil {
 		response.Status(http.StatusBadRequest).Message(err.Error()).JSON()
+
 		return
 	}
 

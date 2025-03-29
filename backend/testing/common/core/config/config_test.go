@@ -10,6 +10,8 @@ import (
 )
 
 func TestNewConfig(t *testing.T) {
+	t.Parallel()
+
 	appCfg, err := config.NewAppConfig(config.AppConfigParams{})
 	require.NoError(t, err)
 	assert.NotNil(t, appCfg)
@@ -34,6 +36,8 @@ func TestGetDatabaseURL(t *testing.T) {
 }
 
 func TestGetEmbedResourceFolder(t *testing.T) {
+	t.Parallel()
+
 	var embedFS fstest.MapFS
 
 	appCfg, err := config.NewAppConfig(config.AppConfigParams{

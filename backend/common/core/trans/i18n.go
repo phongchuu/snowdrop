@@ -75,7 +75,6 @@ func glob(f fs.FS, pattern string) ([]string, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
