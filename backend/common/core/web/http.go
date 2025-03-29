@@ -15,6 +15,7 @@ import (
 	"github.com/samber/lo"
 	"go.uber.org/fx"
 	"internal.snowdrop/common/core/log"
+	"internal.snowdrop/common/core/session"
 	"internal.snowdrop/common/core/trans"
 )
 
@@ -30,8 +31,9 @@ type HTTPHandler interface {
 
 type RouteParams struct {
 	fx.In
-	I18nBundle *i18n.Bundle
-	HTTPRoutes []HTTPHandler `group:"http_routes"`
+	I18nBundle     *i18n.Bundle
+	HTTPRoutes     []HTTPHandler `group:"http_routes"`
+	SessionManager *session.Manager
 }
 
 // HTTPRoute is a helper function that annotates a given function to be used as an HTTP handler
@@ -69,6 +71,7 @@ func NewRouter(params RouteParams) *chi.Mux {
 	middlewares := map[int]func(http.Handler) http.Handler{
 		0:  middleware.CleanPath,
 		30: trans.WithI18nMiddleware(params.I18nBundle),
+		35: params.SessionManager.Middleware,
 		60: middleware.Timeout(time.Minute),
 	}
 

@@ -13,7 +13,13 @@ import (
 func NewModule() fx.Option {
 	return fx.Module(
 		"DatabaseModule",
-		fx.Provide(newDatabase),
+		fx.Provide(
+			newDatabase,
+			fx.Annotate(
+				NewTransactionManager,
+				fx.As(new(TransactionManager)),
+			),
+		),
 		fx.Invoke(executeDatabaseUpgrade),
 	)
 }

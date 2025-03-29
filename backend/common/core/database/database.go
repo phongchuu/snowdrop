@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -16,17 +15,6 @@ import (
 	"go.uber.org/fx"
 	"internal.snowdrop/common/core/config"
 )
-
-type Database interface {
-	Exec(query string, args ...any) (sql.Result, error)
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	Prepare(query string) (*sql.Stmt, error)
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-	Query(query string, args ...any) (*sql.Rows, error)
-	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-	QueryRow(query string, args ...any) *sql.Row
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-}
 
 func newDatabase(
 	lc fx.Lifecycle,
@@ -101,51 +89,4 @@ func GenerateUUIDv7PgType() pgtype.UUID {
 		Bytes: uuid,
 		Valid: true,
 	}
-}
-
-func configureTransaction(ctx context.Context, tx *sql.Tx) error {
-	_, err := tx.ExecContext(ctx, "SELECT set_config('session.requester', $1, true)", "xxx")
-
-	return err
-}
-
-func GetTransaction(ctx context.Context, db Database) (*sql.Tx, bool, error) {
-	if tx, ok := db.(*sql.Tx); ok {
-		if err := configureTransaction(ctx, tx); err != nil {
-			_ = tx.Rollback()
-
-			return nil, false, err
-		}
-
-		return tx, false, nil
-	}
-
-	if pool, ok := db.(*sql.DB); ok {
-		tx, err := pool.BeginTx(ctx, &sql.TxOptions{})
-		if err != nil {
-			return nil, false, err
-		}
-
-		if err := configureTransaction(ctx, tx); err != nil {
-			_ = tx.Rollback()
-
-			return nil, false, err
-		}
-
-		return tx, true, nil
-	}
-
-	return nil, false, errors.ErrUnsupported
-}
-
-func AutoRollbackOrCommit(tx *sql.Tx, err error) error {
-	if err != nil {
-		return tx.Rollback()
-	}
-
-	if err := tx.Commit(); err != nil {
-		return tx.Rollback()
-	}
-
-	return nil
 }

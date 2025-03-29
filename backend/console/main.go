@@ -13,6 +13,7 @@ import (
 	"internal.snowdrop/common/core/config"
 	"internal.snowdrop/common/core/database"
 	"internal.snowdrop/common/core/log"
+	"internal.snowdrop/common/core/session"
 	"internal.snowdrop/common/core/trans"
 	"internal.snowdrop/common/core/web"
 	"internal.snowdrop/common/features/auth"
@@ -62,6 +63,7 @@ func main() {
 		auth.NewModule(),
 		web.NewModule(),
 		openapi.NewModule(),
+		session.NewModule(),
 		staticfile.NewModule(),
 		trans.NewModule(),
 		usermgt.NewModule(),

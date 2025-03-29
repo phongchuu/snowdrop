@@ -2,7 +2,6 @@ package usermgt
 
 import (
 	"context"
-	"time"
 
 	"github.com/samber/lo"
 	"golang.org/x/crypto/bcrypt"
@@ -12,16 +11,6 @@ type CreateUserDTO struct {
 	Username    string
 	Email       string
 	RawPassword string
-}
-
-type UserDTO struct {
-	ID        string     `json:"id"`
-	Username  string     `json:"username"`
-	Email     string     `json:"email"`
-	CreatedAt time.Time  `json:"createdAt"`
-	CreatedBy string     `json:"createdBy"`
-	UpdatedAt *time.Time `json:"updatedAt"`
-	UpdatedBy *string    `json:"updatedBy"`
 }
 
 type UserServiceImpl struct {
@@ -57,13 +46,22 @@ func (u UserServiceImpl) CreateUser(
 		return nil, err
 	}
 
-	return &UserDTO{
-		ID:        userModel.ID.String(),
-		Username:  userModel.Username,
-		Email:     userModel.Email,
-		CreatedAt: userModel.CreatedAt.Time,
-		CreatedBy: userModel.CreatedBy,
-		UpdatedAt: lo.Ternary(userModel.UpdatedAt.Valid, &userModel.UpdatedAt.Time, nil),
-		UpdatedBy: lo.Ternary(userModel.UpdatedBy.Valid, &userModel.UpdatedBy.String, nil),
-	}, nil
+	return lo.ToPtr(ToUserDTO(*userModel)), nil
+}
+
+func (u UserServiceImpl) Login(
+	ctx context.Context,
+	username string,
+	password string,
+) (*UserDTO, error) {
+	userModel, err := u.userRepository.GetUserByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(userModel.Password), []byte(password)); err != nil {
+		return nil, err
+	}
+
+	return lo.ToPtr(ToUserDTO(*userModel)), nil
 }

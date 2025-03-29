@@ -13,6 +13,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"internal.snowdrop/common/core/database"
+	"internal.snowdrop/common/core/session"
 	"internal.snowdrop/common/core/trans"
 	"internal.snowdrop/common/core/web"
 	"internal.snowdrop/common/features/auth"
@@ -52,18 +54,35 @@ func TestRegisterRouteServeHTTP(t *testing.T) {
 	bundle, err := trans.NewI18nBundle(config)
 	require.NoError(t, err)
 
-	userRepository := usermgt.NewUserRepository(db)
+	userRepository := usermgt.NewUserRepository(usermgt.UserRepositoryParams{
+		TransactionManager: database.NewTransactionManager(db),
+	})
 	userService := usermgt.NewUserService(userRepository)
 	registerRoute := auth.NewRegisterRoute(auth.RegisterRouteParams{
 		Validator:   web.NewValidator(),
 		UserService: userService,
 	})
+	transactionManager := database.NewTransactionManager(db)
 	router := web.NewRouter(web.RouteParams{
 		I18nBundle: bundle,
+		SessionManager: session.NewManager(session.ManagerParams{
+			TransactionManager: transactionManager,
+			Repository:         session.NewPostgresRepository(transactionManager),
+		}),
 		HTTPRoutes: []web.HTTPHandler{registerRoute},
 	})
 
-	mock.MatchExpectationsInOrder(true)
+	mock.ExpectBegin()
+	mock.ExpectExec(`SELECT set_config`).
+		WithArgs(sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectQuery(`INSERT INTO sessions`).
+		WillReturnRows(
+			sqlmock.NewRows([]string{"id", "user_id", "created_at", "last_accessed_at", "expires_at", "data"}).
+				AddRow("random-id", uuid.Nil, time.Time{}, time.Time{}, time.Time{}, ""),
+		)
+	mock.ExpectCommit()
+
 	mock.ExpectBegin()
 	mock.ExpectExec(`SELECT set_config`).
 		WithArgs(sqlmock.AnyArg()).
@@ -90,7 +109,7 @@ func TestRegisterRouteServeHTTP(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, w.Code)
 	assert.Equal(t, http.StatusCreated, result.Status)
 	assert.Equal(t, "The resource has been successfully created on the server.", result.Message)
-	require.NoError(t, uuid.Validate(result.Data.ID))
+	assert.NotEqual(t, result.Data.ID, uuid.Nil)
 	assert.Equal(t, "admin", result.Data.Username)
 	assert.Equal(t, "admin@internal.com", result.Data.Email)
 	assert.WithinDuration(t, time.Now(), result.Data.CreatedAt, time.Second)

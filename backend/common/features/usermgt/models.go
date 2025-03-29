@@ -1,21 +1,21 @@
 package usermgt
 
 import (
-	"database/sql"
+	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
-	"internal.snowdrop/common/core/database"
+	"github.com/google/uuid"
+	"github.com/samber/lo"
+	"internal.snowdrop/common/store"
 )
 
-type UserModel struct {
-	ID        pgtype.UUID        `db:"id"`
-	Username  string             `db:"username"`
-	Email     string             `db:"email"`
-	Password  string             `db:"password"`
-	CreatedAt pgtype.Timestamptz `db:"created_at"`
-	CreatedBy string             `db:"created_by"`
-	UpdatedAt pgtype.Timestamptz `db:"updated_at"`
-	UpdatedBy sql.NullString     `db:"updated_by"`
+type UserDTO struct {
+	ID        uuid.UUID  `json:"id"`
+	Username  string     `json:"username"`
+	Email     string     `json:"email"`
+	CreatedAt time.Time  `json:"createdAt"`
+	CreatedBy string     `json:"createdBy"`
+	UpdatedAt *time.Time `json:"updatedAt"`
+	UpdatedBy *string    `json:"updatedBy"`
 }
 
 type UserSetter struct {
@@ -24,8 +24,14 @@ type UserSetter struct {
 	Password string
 }
 
-func NewUserModel() UserModel {
-	return UserModel{
-		ID: database.GenerateUUIDv7PgType(),
+func ToUserDTO(model store.UserModel) UserDTO {
+	return UserDTO{
+		ID:        model.ID,
+		Username:  model.Username,
+		Email:     model.Email,
+		CreatedAt: model.CreatedAt,
+		CreatedBy: model.CreatedBy,
+		UpdatedAt: lo.Ternary(model.UpdatedAt.Valid, &model.UpdatedAt.Time, nil),
+		UpdatedBy: lo.Ternary(model.UpdatedBy.Valid, &model.UpdatedBy.String, nil),
 	}
 }
