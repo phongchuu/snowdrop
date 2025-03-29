@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"internal.snowdrop/common/core/trans"
 	"internal.snowdrop/common/core/web"
-	mockconfig "internal.snowdrop/testing/mocks/common/core/config"
+	mockconfig "internal.snowdrop/testing/mocks/internal.snowdrop/common/core/config"
 	"internal.snowdrop/testing/testutils"
 )
 

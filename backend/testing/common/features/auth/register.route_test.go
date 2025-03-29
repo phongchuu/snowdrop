@@ -17,8 +17,8 @@ import (
 	"internal.snowdrop/common/core/web"
 	"internal.snowdrop/common/features/auth"
 	"internal.snowdrop/common/features/usermgt"
-	mockconfig "internal.snowdrop/testing/mocks/common/core/config"
-	mockusermgt "internal.snowdrop/testing/mocks/common/features/usermgt"
+	mockconfig "internal.snowdrop/testing/mocks/internal.snowdrop/common/core/config"
+	mockusermgt "internal.snowdrop/testing/mocks/internal.snowdrop/common/features/usermgt"
 	"internal.snowdrop/testing/testutils"
 )
 
