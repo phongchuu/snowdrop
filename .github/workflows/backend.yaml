@@ -26,7 +26,7 @@ jobs:
       fail-fast: false
       matrix:
         dir: [backend]
-        module: [common, console, testing, internal/snowdrop]
+        module: [common, console, testing, framework/snowdrop]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -92,7 +92,7 @@ jobs:
             -cover \
             -covermode=atomic \
             -coverprofile "coverage.txt" \
-            -coverpkg "internal.snowdrop/common/...,internal.snowdrop/console/..." \
+            -coverpkg "internal.snowdrop/common/...,internal.snowdrop/console/...,internal.snowdrop/framework/..." \
             -race \
             ./...
 
