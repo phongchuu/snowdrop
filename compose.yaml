@@ -63,7 +63,7 @@ services:
       - backend
 
   grafana-otel-lgtm:
-    image: grafana/otel-lgtm:0.9.3
+    image: grafana/otel-lgtm:0.10.0
     restart: always
     ports:
       - 5000:3000
