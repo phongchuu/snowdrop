@@ -9,7 +9,7 @@ ENV HOME=/usr/src/app
 ENV GO111MODULE=on
 ENV CGO_ENABLED=0
 ENV GOOS=linux
-ENV FRAMEWORK_PATH=./internal/snowdrop
+ENV FRAMEWORK_PATH=./framework/snowdrop
 ENV COMMON_MODULE_PATH=./common
 ENV CONSOLE_MODULE_PATH=./console
 
@@ -36,9 +36,7 @@ WORKDIR ${CONSOLE_MODULE_PATH}
 RUN CGO_ENABLED=0 go build \
     -ldflags="-s -w \
     -X 'main.AppVersion=$(cat VERSION)' \
-    -X 'main.AppRevision=${APP_REVISION}' \
-    -X 'main.AppReleaseDate=$(date +'%Y-%m-%dT%H:%M:%S%z')' \
-    " \
+    -X 'main.AppRevision=${APP_REVISION}'" \
     -o "/usr/bin/console" .
 
 FROM alpine:3.21

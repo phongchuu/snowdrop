@@ -4,7 +4,7 @@ go 1.24.0
 
 replace internal.snowdrop/common => ../common
 
-replace internal.snowdrop/framework => ../internal/snowdrop
+replace internal.snowdrop/framework => ../framework/snowdrop
 
 require (
 	go.uber.org/fx v1.23.0

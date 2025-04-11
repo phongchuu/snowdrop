@@ -1,14 +1,11 @@
 ---
-dir: mocks/{{.PackagePath}}
-mockname: "{{.Mock}}{{.InterfaceName}}"
-outpkg: mock{{.PackageName}}
-filename: "{{.InterfaceName}}.go"
 all: true
-resolve-type-alias: false
-disable-version-string: true
-issue-845-fix: true
+dir: mocks/{{.SrcPackagePath}}
+filename: mocks.go
+structname: "{{.Mock}}{{.InterfaceName}}"
+pkgname: mock{{.SrcPackageName}}
 recursive: true
-disable-func-mocks: true
+template: testify
 packages:
   internal.snowdrop/common:
   internal.snowdrop/framework:
