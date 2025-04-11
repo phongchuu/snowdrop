@@ -6,6 +6,8 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
+	store "internal.snowdrop/common/store"
+
 	usermgt "internal.snowdrop/common/features/usermgt"
 )
 
@@ -22,29 +24,29 @@ func (_m *MockUserRepository) EXPECT() *MockUserRepository_Expecter {
 	return &MockUserRepository_Expecter{mock: &_m.Mock}
 }
 
-// CreateUser provides a mock function with given fields: ctx, setter
-func (_m *MockUserRepository) CreateUser(ctx context.Context, setter usermgt.UserSetter) (*usermgt.UserModel, error) {
-	ret := _m.Called(ctx, setter)
+// CreateUser provides a mock function with given fields: ctx, params
+func (_m *MockUserRepository) CreateUser(ctx context.Context, params usermgt.UserSetter) (*store.UserModel, error) {
+	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateUser")
 	}
 
-	var r0 *usermgt.UserModel
+	var r0 *store.UserModel
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, usermgt.UserSetter) (*usermgt.UserModel, error)); ok {
-		return rf(ctx, setter)
+	if rf, ok := ret.Get(0).(func(context.Context, usermgt.UserSetter) (*store.UserModel, error)); ok {
+		return rf(ctx, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, usermgt.UserSetter) *usermgt.UserModel); ok {
-		r0 = rf(ctx, setter)
+	if rf, ok := ret.Get(0).(func(context.Context, usermgt.UserSetter) *store.UserModel); ok {
+		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*usermgt.UserModel)
+			r0 = ret.Get(0).(*store.UserModel)
 		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, usermgt.UserSetter) error); ok {
-		r1 = rf(ctx, setter)
+		r1 = rf(ctx, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -59,24 +61,83 @@ type MockUserRepository_CreateUser_Call struct {
 
 // CreateUser is a helper method to define mock.On call
 //   - ctx context.Context
-//   - setter usermgt.UserSetter
-func (_e *MockUserRepository_Expecter) CreateUser(ctx interface{}, setter interface{}) *MockUserRepository_CreateUser_Call {
-	return &MockUserRepository_CreateUser_Call{Call: _e.mock.On("CreateUser", ctx, setter)}
+//   - params usermgt.UserSetter
+func (_e *MockUserRepository_Expecter) CreateUser(ctx interface{}, params interface{}) *MockUserRepository_CreateUser_Call {
+	return &MockUserRepository_CreateUser_Call{Call: _e.mock.On("CreateUser", ctx, params)}
 }
 
-func (_c *MockUserRepository_CreateUser_Call) Run(run func(ctx context.Context, setter usermgt.UserSetter)) *MockUserRepository_CreateUser_Call {
+func (_c *MockUserRepository_CreateUser_Call) Run(run func(ctx context.Context, params usermgt.UserSetter)) *MockUserRepository_CreateUser_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(usermgt.UserSetter))
 	})
 	return _c
 }
 
-func (_c *MockUserRepository_CreateUser_Call) Return(_a0 *usermgt.UserModel, _a1 error) *MockUserRepository_CreateUser_Call {
+func (_c *MockUserRepository_CreateUser_Call) Return(_a0 *store.UserModel, _a1 error) *MockUserRepository_CreateUser_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockUserRepository_CreateUser_Call) RunAndReturn(run func(context.Context, usermgt.UserSetter) (*usermgt.UserModel, error)) *MockUserRepository_CreateUser_Call {
+func (_c *MockUserRepository_CreateUser_Call) RunAndReturn(run func(context.Context, usermgt.UserSetter) (*store.UserModel, error)) *MockUserRepository_CreateUser_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetUserByUsername provides a mock function with given fields: ctx, username
+func (_m *MockUserRepository) GetUserByUsername(ctx context.Context, username string) (*store.UserModel, error) {
+	ret := _m.Called(ctx, username)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserByUsername")
+	}
+
+	var r0 *store.UserModel
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*store.UserModel, error)); ok {
+		return rf(ctx, username)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *store.UserModel); ok {
+		r0 = rf(ctx, username)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*store.UserModel)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, username)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockUserRepository_GetUserByUsername_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserByUsername'
+type MockUserRepository_GetUserByUsername_Call struct {
+	*mock.Call
+}
+
+// GetUserByUsername is a helper method to define mock.On call
+//   - ctx context.Context
+//   - username string
+func (_e *MockUserRepository_Expecter) GetUserByUsername(ctx interface{}, username interface{}) *MockUserRepository_GetUserByUsername_Call {
+	return &MockUserRepository_GetUserByUsername_Call{Call: _e.mock.On("GetUserByUsername", ctx, username)}
+}
+
+func (_c *MockUserRepository_GetUserByUsername_Call) Run(run func(ctx context.Context, username string)) *MockUserRepository_GetUserByUsername_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockUserRepository_GetUserByUsername_Call) Return(_a0 *store.UserModel, _a1 error) *MockUserRepository_GetUserByUsername_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockUserRepository_GetUserByUsername_Call) RunAndReturn(run func(context.Context, string) (*store.UserModel, error)) *MockUserRepository_GetUserByUsername_Call {
 	_c.Call.Return(run)
 	return _c
 }

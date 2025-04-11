@@ -2,9 +2,10 @@ package usermgt
 
 import (
 	"context"
-	"time"
 
 	"github.com/samber/lo"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -14,25 +15,17 @@ type CreateUserDTO struct {
 	RawPassword string
 }
 
-type UserDTO struct {
-	ID        string     `json:"id"`
-	Username  string     `json:"username"`
-	Email     string     `json:"email"`
-	CreatedAt time.Time  `json:"createdAt"`
-	CreatedBy string     `json:"createdBy"`
-	UpdatedAt *time.Time `json:"updatedAt"`
-	UpdatedBy *string    `json:"updatedBy"`
-}
-
 type UserServiceImpl struct {
 	userRepository UserRepository
+	tracer         trace.Tracer
 }
 
 var _ UserService = (*UserServiceImpl)(nil)
 
-func NewUserService(userRepository UserRepository) UserServiceImpl {
+func NewUserService(userRepository UserRepository, tracer trace.Tracer) UserServiceImpl {
 	return UserServiceImpl{
 		userRepository: userRepository,
+		tracer:         tracer,
 	}
 }
 
@@ -57,13 +50,31 @@ func (u UserServiceImpl) CreateUser(
 		return nil, err
 	}
 
-	return &UserDTO{
-		ID:        userModel.ID.String(),
-		Username:  userModel.Username,
-		Email:     userModel.Email,
-		CreatedAt: userModel.CreatedAt.Time,
-		CreatedBy: userModel.CreatedBy,
-		UpdatedAt: lo.Ternary(userModel.UpdatedAt.Valid, &userModel.UpdatedAt.Time, nil),
-		UpdatedBy: lo.Ternary(userModel.UpdatedBy.Valid, &userModel.UpdatedBy.String, nil),
-	}, nil
+	return lo.ToPtr(ToUserDTO(*userModel)), nil
+}
+
+func (u UserServiceImpl) Login(
+	ctx context.Context,
+	username string,
+	password string,
+) (*UserDTO, error) {
+	ctx, span := u.tracer.Start(
+		ctx,
+		"[user.service.go] Login",
+		trace.WithSpanKind(trace.SpanKindInternal),
+		trace.WithAttributes(attribute.String("username", username)),
+		trace.WithAttributes(attribute.String("password", "[redacted]")),
+	)
+	defer span.End()
+
+	userModel, err := u.userRepository.GetUserByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(userModel.Password), []byte(password)); err != nil {
+		return nil, err
+	}
+
+	return lo.ToPtr(ToUserDTO(*userModel)), nil
 }

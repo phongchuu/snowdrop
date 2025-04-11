@@ -2,7 +2,7 @@
 "200": Your request was successfully completed.
 "201": The resource has been successfully created on the server.
 "202": Your request has been accepted and is awaiting processing.
-"400": The request is invalid; please check the syntax and try again.
+"400": The request contains invalid parameters or is malformed.
 "401": Authentication is required to proceed with this request.
 "403": You do not have permission to access this resource.
 "404": The resource you requested could not be found on the server.

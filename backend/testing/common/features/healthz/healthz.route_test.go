@@ -7,17 +7,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
-	"internal.snowdrop/common/core/web"
 	"internal.snowdrop/common/features/healthz"
+	"internal.snowdrop/testing/testutils"
 )
 
 func TestHealthCheckRoute(t *testing.T) {
 	t.Parallel()
 
-	router := web.NewRouter(web.RouteParams{
-		HTTPRoutes: []web.HTTPHandler{healthz.NewHealthCheckRoute()},
-	})
-
+	router := testutils.DefaultWebRouter(t, testutils.WithRoute(healthz.NewHealthCheckRoute()))
 	assert.True(t, router.Match(chi.NewRouteContext(), http.MethodGet, "/healthz"))
 }
 
@@ -25,9 +22,7 @@ func TestHealthCheckRouteServeHTTP(t *testing.T) {
 	t.Parallel()
 
 	healthzRoute := healthz.NewHealthCheckRoute()
-	router := web.NewRouter(web.RouteParams{
-		HTTPRoutes: []web.HTTPHandler{healthzRoute},
-	})
+	router := testutils.DefaultWebRouter(t, testutils.WithRoute(healthzRoute))
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(healthzRoute.Method(), healthzRoute.Path(), nil)

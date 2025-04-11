@@ -3,12 +3,13 @@ package healthz
 import (
 	"net/http"
 
-	"internal.snowdrop/common/core/web"
+	snowdrop "internal.snowdrop/framework"
+	"internal.snowdrop/framework/web"
 )
 
 type HealthCheckRoute struct{}
 
-var _ web.HTTPHandler = (*HealthCheckRoute)(nil)
+var _ snowdrop.HTTPHandler = (*HealthCheckRoute)(nil)
 
 func NewHealthCheckRoute() HealthCheckRoute {
 	return HealthCheckRoute{}
@@ -25,8 +26,8 @@ func (h HealthCheckRoute) Path() string {
 }
 
 // Tags implements web.HTTPHandler.
-func (h HealthCheckRoute) Tags() []web.RouteTag {
-	return []web.RouteTag{web.PublicRoute}
+func (h HealthCheckRoute) Tags() []snowdrop.RouteTag {
+	return []snowdrop.RouteTag{web.PublicRoute}
 }
 
 // ServeHTTP implements web.HTTPHandler.

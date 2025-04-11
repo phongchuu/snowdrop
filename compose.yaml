@@ -61,3 +61,13 @@ services:
         target: /pgpass
     networks:
       - backend
+
+  grafana-otel-lgtm:
+    image: grafana/otel-lgtm:0.9.3
+    restart: always
+    ports:
+      - 5000:3000
+      - 4317:4317
+      - 4318:4318
+    networks:
+      - backend

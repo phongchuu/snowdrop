@@ -44,7 +44,7 @@ linters:
     - lll
     - makezero
     - mirror
-    - mnd
+    # - mnd
     - musttag
     - nakedret
     - nestif
@@ -161,6 +161,7 @@ linters:
         - funlen
         - gocognit
         - lll
+        - ireturn
     sloglint:
       no-mixed-args: true
       kv-only: false

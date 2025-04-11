@@ -2,7 +2,7 @@
 "200": Yêu cầu đã được thực hiện thành công.
 "201": Tài nguyên đã được tạo thành công trên máy chủ.
 "202": Yêu cầu đã được chấp nhận và đang chờ xử lý.
-"400": Yêu cầu không hợp lệ, vui lòng kiểm tra lại cú pháp.
+"400": Yêu cầu chứa tham số không hợp lệ hoặc có cấu trúc không đúng.
 "401": Vui lòng xác thực để thực hiện yêu cầu này.
 "403": Bạn không có quyền truy cập tài nguyên này.
 "404": Không tìm thấy tài nguyên được yêu cầu trên máy chủ.
