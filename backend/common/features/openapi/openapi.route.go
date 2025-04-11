@@ -3,12 +3,13 @@ package openapi
 import (
 	"net/http"
 
-	"internal.snowdrop/common/core/web"
+	snowdrop "internal.snowdrop/framework"
+	"internal.snowdrop/framework/web"
 )
 
 type DocumentationRoute struct{}
 
-var _ web.HTTPHandler = (*DocumentationRoute)(nil)
+var _ snowdrop.HTTPHandler = (*DocumentationRoute)(nil)
 
 func NewDocumentationRoute() *DocumentationRoute {
 	return &DocumentationRoute{}
@@ -25,8 +26,8 @@ func (o *DocumentationRoute) Path() string {
 }
 
 // Tags implements web.HTTPHandler.
-func (o *DocumentationRoute) Tags() []web.RouteTag {
-	return []web.RouteTag{web.PublicRoute}
+func (o *DocumentationRoute) Tags() []snowdrop.RouteTag {
+	return []snowdrop.RouteTag{web.PublicRoute}
 }
 
 // ServeHTTP implements web.HTTPHandler.

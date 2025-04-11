@@ -81,6 +81,66 @@ func (_c *MockUserService_CreateUser_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
+// Login provides a mock function with given fields: ctx, username, password
+func (_m *MockUserService) Login(ctx context.Context, username string, password string) (*usermgt.UserDTO, error) {
+	ret := _m.Called(ctx, username, password)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Login")
+	}
+
+	var r0 *usermgt.UserDTO
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*usermgt.UserDTO, error)); ok {
+		return rf(ctx, username, password)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *usermgt.UserDTO); ok {
+		r0 = rf(ctx, username, password)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*usermgt.UserDTO)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, username, password)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockUserService_Login_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Login'
+type MockUserService_Login_Call struct {
+	*mock.Call
+}
+
+// Login is a helper method to define mock.On call
+//   - ctx context.Context
+//   - username string
+//   - password string
+func (_e *MockUserService_Expecter) Login(ctx interface{}, username interface{}, password interface{}) *MockUserService_Login_Call {
+	return &MockUserService_Login_Call{Call: _e.mock.On("Login", ctx, username, password)}
+}
+
+func (_c *MockUserService_Login_Call) Run(run func(ctx context.Context, username string, password string)) *MockUserService_Login_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *MockUserService_Login_Call) Return(_a0 *usermgt.UserDTO, _a1 error) *MockUserService_Login_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockUserService_Login_Call) RunAndReturn(run func(context.Context, string, string) (*usermgt.UserDTO, error)) *MockUserService_Login_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMockUserService creates a new instance of MockUserService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockUserService(t interface {

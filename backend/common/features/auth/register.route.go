@@ -5,8 +5,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
-	"internal.snowdrop/common/core/web"
 	"internal.snowdrop/common/features/usermgt"
+	snowdrop "internal.snowdrop/framework"
+	"internal.snowdrop/framework/web"
 )
 
 type RegisterRoute struct {
@@ -26,7 +27,7 @@ type RegisterFormData struct {
 	Password string `json:"password" validate:"required,min=6,max=73"`
 }
 
-var _ web.HTTPHandler = (*RegisterRoute)(nil)
+var _ snowdrop.HTTPHandler = (*RegisterRoute)(nil)
 
 func NewRegisterRoute(p RegisterRouteParams) RegisterRoute {
 	return RegisterRoute{
@@ -46,8 +47,8 @@ func (registerRoute RegisterRoute) Path() string {
 }
 
 // Tags implements web.HTTPHandler.
-func (registerRoute RegisterRoute) Tags() []web.RouteTag {
-	return []web.RouteTag{web.PublicRoute}
+func (registerRoute RegisterRoute) Tags() []snowdrop.RouteTag {
+	return []snowdrop.RouteTag{web.PublicRoute}
 }
 
 // ServeHTTP implements web.HTTPHandler.

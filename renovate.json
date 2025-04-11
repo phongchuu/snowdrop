@@ -4,9 +4,10 @@
         "config:recommended",
         ":semanticCommitTypeAll(chore)"
     ],
-    "additionalReviewers": ["phongchuu"],
+    "additionalReviewers": ["phongphongg"],
     "addLabels": ["dependencies"],
     "ignoreDeps": [
+        "internal.snowdrop/framework",
         "internal.snowdrop/common",
         "internal.snowdrop/console"
     ]

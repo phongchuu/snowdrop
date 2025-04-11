@@ -11,3 +11,4 @@ recursive: true
 disable-func-mocks: true
 packages:
   internal.snowdrop/common:
+  internal.snowdrop/framework:

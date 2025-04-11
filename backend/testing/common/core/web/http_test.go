@@ -10,16 +10,16 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"internal.snowdrop/common/core/trans"
-	"internal.snowdrop/common/core/web"
-	mockconfig "internal.snowdrop/testing/mocks/internal.snowdrop/common/core/config"
+	"internal.snowdrop/framework/trans"
+	"internal.snowdrop/framework/web"
+	mocksnowdrop "internal.snowdrop/testing/mocks/internal.snowdrop/framework"
 	"internal.snowdrop/testing/testutils"
 )
 
 func TestResponseBuilder(t *testing.T) {
 	t.Parallel()
 
-	config := mockconfig.NewMockManager(t)
+	config := mocksnowdrop.NewMockConfigManager(t)
 	config.EXPECT().GetEmbedResourceFolder().Return(testutils.GetResourceFS())
 	bundle, err := trans.NewI18nBundle(config)
 	require.NoError(t, err)

@@ -121,3 +121,73 @@ paths:
                           updatedBy:
                             type: [string, "null"]
                             readOnly: true
+
+  /auth/login:
+    post:
+      description: Register a new user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  minLength: 4
+                  maxLength: 255
+                password:
+                  type: string
+                  minLength: 6
+                  maxLength: 73
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - $ref: "#/components/schemas/HTTPCreatedCode"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required:
+                          - id
+                          - username
+                          - email
+                          - createdAt
+                          - createdBy
+                          - updatedAt
+                          - updatedBy
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            readOnly: true
+                          username:
+                            type: string
+                            example: tester
+                            readOnly: true
+                          email:
+                            type: string
+                            format: email
+                            example: tester@example.com
+                            readOnly: true
+                          createdAt:
+                            type: string
+                            format: date-time
+                            readOnly: true
+                          createdBy:
+                            type: string
+                            example: system
+                            readOnly: true
+                          updatedAt:
+                            type: [string, "null"]
+                            format: date-time
+                            readOnly: true
+                          updatedBy:
+                            type: [string, "null"]
+                            readOnly: true

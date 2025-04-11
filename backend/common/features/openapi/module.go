@@ -2,7 +2,7 @@ package openapi
 
 import (
 	"go.uber.org/fx"
-	"internal.snowdrop/common/core/web"
+	"internal.snowdrop/framework/web"
 )
 
 func NewModule() fx.Option {
