@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/mcosta74/pgx-slog v0.4.1
-	github.com/nicksnyder/go-i18n/v2 v2.5.1
+	github.com/nicksnyder/go-i18n/v2 v2.6.0
 	github.com/pressly/goose/v3 v3.24.2
 	github.com/samber/lo v1.49.1
 	go.opentelemetry.io/contrib/bridges/otelslog v0.10.0

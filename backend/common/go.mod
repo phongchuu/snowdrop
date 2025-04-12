@@ -37,7 +37,7 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mcosta74/pgx-slog v0.4.1 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
-	github.com/nicksnyder/go-i18n/v2 v2.5.1 // indirect
+	github.com/nicksnyder/go-i18n/v2 v2.6.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pressly/goose/v3 v3.24.2 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
