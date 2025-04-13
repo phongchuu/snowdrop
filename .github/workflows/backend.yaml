@@ -91,10 +91,14 @@ jobs:
           go test \
             -cover \
             -covermode=atomic \
-            -coverprofile "coverage.txt" \
-            -coverpkg "internal.snowdrop/common/...,internal.snowdrop/console/...,internal.snowdrop/framework/..." \
+            -coverprofile="coverage.txt" \
+            -coverpkg="internal.snowdrop/common/...,internal.snowdrop/console/...,internal.snowdrop/framework/..." \
             -race \
             ./...
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@0565863a31f2c772f9f0395002a31e3f06189574
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     name: Build image
