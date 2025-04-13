@@ -1,4 +1,4 @@
-package trans
+package translation
 
 import "go.uber.org/fx"
 
@@ -6,7 +6,6 @@ func NewModule() fx.Option {
 	return fx.Module(
 		"I18nModule",
 		fx.Provide(
-			NewI18nMiddleware,
 			NewI18nBundle,
 		),
 	)

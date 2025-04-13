@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	ut "github.com/go-playground/universal-translator"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/samber/lo"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -20,21 +21,18 @@ import (
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/log"
 	"internal.snowdrop/framework/session"
-	"internal.snowdrop/framework/trans"
+	snowdropMiddleware "internal.snowdrop/framework/web/middleware"
 )
-
-type RecovererMiddleware func(next http.Handler) http.Handler
 
 type RouteParams struct {
 	fx.In
-	I18nBundle                    *i18n.Bundle
-	HTTPRoutes                    []snowdrop.HTTPHandler `group:"http_routes"`
-	SessionManager                *session.Manager
-	I18nMiddleware                trans.I18nMiddleware
-	UniversalTranslatorMiddleware UniversalTranslatorMiddleware
-	RecovererMiddleware           RecovererMiddleware
-	Logger                        *slog.Logger
-	Tracer                        otelTrace.Tracer
+	I18nBundle                 *i18n.Bundle
+	HTTPRoutes                 []snowdrop.HTTPHandler `group:"http_routes"`
+	SessionManager             *session.Manager
+	Logger                     *slog.Logger
+	Tracer                     otelTrace.Tracer
+	UniversalTranslator        *ut.UniversalTranslator
+	GetPreferredUserLanguageFn snowdrop.GetPreferredUserLanguageFn
 }
 
 // HTTPRoute annotates a function as an HTTP handler for Fx DI.
@@ -70,12 +68,18 @@ func NewRouter(params RouteParams) *chi.Mux {
 				return fmt.Sprintf("%s %s", r.Method, r.URL.Path)
 			}),
 		),
-		1:   middleware.CleanPath,
-		20:  params.RecovererMiddleware,
-		60:  params.I18nMiddleware,
-		80:  params.UniversalTranslatorMiddleware,
+		1:  chiMiddleware.CleanPath,
+		20: snowdropMiddleware.NewRecovererMiddleware(params.Logger),
+		60: snowdropMiddleware.NewI18nMiddleware(
+			params.I18nBundle,
+			params.GetPreferredUserLanguageFn,
+		),
+		80: snowdropMiddleware.NewUniversalTranslatorMiddleware(
+			params.UniversalTranslator,
+			params.GetPreferredUserLanguageFn,
+		),
 		100: params.SessionManager.Middleware,
-		120: middleware.Timeout(time.Minute),
+		120: chiMiddleware.Timeout(3 * time.Minute),
 	}
 
 	// Public routes
@@ -141,38 +145,4 @@ func newHTTPServer(
 	})
 
 	return srv
-}
-
-func NewRecovererMiddleware(
-	logger *slog.Logger,
-) RecovererMiddleware {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			defer func(ctx context.Context) {
-				if rvr := recover(); rvr != nil {
-					//nolint:err113,errorlint // rvr can be any value, not just an error
-					if rvr == http.ErrAbortHandler {
-						// we don't recover http.ErrAbortHandler so the response
-						// to the client is aborted, this should not be logged
-						panic(rvr)
-					}
-
-					logger.ErrorContext(
-						ctx,
-						"Critical error occurred: Panic recovered",
-						// slog.Any("panic", rvr),
-						// slog.Any("stack_trace", string(debug.Stack())),
-					)
-
-					if r.Header.Get("Connection") != "Upgrade" {
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-				}
-			}(r.Context())
-
-			next.ServeHTTP(w, r)
-		}
-
-		return http.HandlerFunc(fn)
-	}
 }

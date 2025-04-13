@@ -24,26 +24,25 @@ import (
 	"internal.snowdrop/framework/database"
 	"internal.snowdrop/framework/log"
 	"internal.snowdrop/framework/session"
-	"internal.snowdrop/framework/trans"
+	"internal.snowdrop/framework/translation"
+	"internal.snowdrop/framework/validation"
 	"internal.snowdrop/framework/web"
 	mockusermgt "internal.snowdrop/testing/mocks/internal.snowdrop/common/features/usermgt"
 	mocksnowdrop "internal.snowdrop/testing/mocks/internal.snowdrop/framework"
 )
 
 type TestContainer struct {
-	NoopLogger                    *slog.Logger
-	MockConfigManager             *mocksnowdrop.MockConfigManager
-	I18nBundle                    *i18n.Bundle
-	Validator                     *validator.Validate
-	UniversalTranslator           *ut.UniversalTranslator
-	I18nMiddleware                trans.I18nMiddleware
-	UniversalTranslatorMiddleware web.UniversalTranslatorMiddleware
-	RecovererMiddleware           web.RecovererMiddleware
-	NoopTracer                    trace.Tracer
-	TransactionManager            snowdrop.TransactionManager
-	SessionManager                *session.Manager
-	MockUserService               *mockusermgt.MockUserService
-	SQLMock                       sqlmock.Sqlmock
+	NoopLogger                 *slog.Logger
+	MockConfigManager          *mocksnowdrop.MockConfigManager
+	I18nBundle                 *i18n.Bundle
+	Validator                  *validator.Validate
+	UniversalTranslator        *ut.UniversalTranslator
+	NoopTracer                 trace.Tracer
+	TransactionManager         snowdrop.TransactionManager
+	SessionManager             *session.Manager
+	MockUserService            *mockusermgt.MockUserService
+	SQLMock                    sqlmock.Sqlmock
+	GetPreferredUserLanguageFn snowdrop.GetPreferredUserLanguageFn
 }
 
 type DefaultWebRouterOptions struct {
@@ -93,10 +92,10 @@ func SetupTestDependencyContainer(t testing.TB) TestContainer {
 		language.Vietnamese,
 	})
 
-	i18nBundle, err := trans.NewI18nBundle(configManager)
+	i18nBundle, err := translation.NewI18nBundle(configManager)
 	require.NoError(t, err)
 
-	validationModule, err := web.NewValidator()
+	validationModule, err := validation.NewValidator()
 	require.NoError(t, err)
 
 	getPreferredUserLanguageFn := core.NewGetPreferredUserLanguageFn(configManager)
@@ -109,25 +108,17 @@ func SetupTestDependencyContainer(t testing.TB) TestContainer {
 	})
 
 	return TestContainer{
-		SQLMock:             mock,
-		NoopLogger:          noopLogger,
-		MockConfigManager:   configManager,
-		I18nBundle:          i18nBundle,
-		Validator:           validationModule.Validator,
-		UniversalTranslator: validationModule.Uni,
-		I18nMiddleware: trans.NewI18nMiddleware(
-			i18nBundle,
-			getPreferredUserLanguageFn,
-		),
-		UniversalTranslatorMiddleware: web.NewUniversalTranslatorMiddleware(
-			validationModule.Uni,
-			getPreferredUserLanguageFn,
-		),
-		RecovererMiddleware: web.NewRecovererMiddleware(noopLogger),
-		NoopTracer:          noop.NewTracerProvider().Tracer("noop-tracer"),
-		TransactionManager:  transactionManager,
-		SessionManager:      sessionManager,
-		MockUserService:     mockusermgt.NewMockUserService(t),
+		GetPreferredUserLanguageFn: getPreferredUserLanguageFn,
+		SQLMock:                    mock,
+		NoopLogger:                 noopLogger,
+		MockConfigManager:          configManager,
+		I18nBundle:                 i18nBundle,
+		Validator:                  validationModule.Validator,
+		UniversalTranslator:        validationModule.UniversalTranslator,
+		NoopTracer:                 noop.NewTracerProvider().Tracer("noop-tracer"),
+		TransactionManager:         transactionManager,
+		SessionManager:             sessionManager,
+		MockUserService:            mockusermgt.NewMockUserService(t),
 	}
 }
 
@@ -155,13 +146,12 @@ func DefaultWebRouter(t testing.TB, optionFns ...func(*DefaultWebRouterOptions))
 	}
 
 	return web.NewRouter(web.RouteParams{
-		Logger:                        options.di.NoopLogger,
-		I18nBundle:                    options.di.I18nBundle,
-		I18nMiddleware:                options.di.I18nMiddleware,
-		SessionManager:                options.di.SessionManager,
-		UniversalTranslatorMiddleware: options.di.UniversalTranslatorMiddleware,
-		RecovererMiddleware:           options.di.RecovererMiddleware,
-		Tracer:                        options.di.NoopTracer,
-		HTTPRoutes:                    options.routes,
+		Logger:                     options.di.NoopLogger,
+		I18nBundle:                 options.di.I18nBundle,
+		SessionManager:             options.di.SessionManager,
+		UniversalTranslator:        options.di.UniversalTranslator,
+		GetPreferredUserLanguageFn: options.di.GetPreferredUserLanguageFn,
+		Tracer:                     options.di.NoopTracer,
+		HTTPRoutes:                 options.routes,
 	})
 }

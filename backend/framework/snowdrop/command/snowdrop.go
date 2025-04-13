@@ -7,7 +7,8 @@ import (
 	"go.uber.org/fx"
 	"internal.snowdrop/framework/database"
 	"internal.snowdrop/framework/session"
-	"internal.snowdrop/framework/trans"
+	"internal.snowdrop/framework/translation"
+	"internal.snowdrop/framework/validation"
 	"internal.snowdrop/framework/web"
 )
 
@@ -16,11 +17,11 @@ func Start(opts []fx.Option) {
 	time.Local = time.UTC
 
 	options := []fx.Option{
-		// config.NewModule(frameworkConfig),
 		database.NewModule(),
 		web.NewModule(),
 		session.NewModule(),
-		trans.NewModule(),
+		translation.NewModule(),
+		validation.NewModule(),
 		fx.Invoke(func(*http.Server) {}),
 	}
 
