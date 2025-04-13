@@ -10,7 +10,8 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"internal.snowdrop/framework/trans"
+	"internal.snowdrop/framework/translation"
+	"internal.snowdrop/framework/validation"
 	"internal.snowdrop/framework/web"
 	mocksnowdrop "internal.snowdrop/testing/mocks/internal.snowdrop/framework"
 	"internal.snowdrop/testing/testutils"
@@ -21,13 +22,21 @@ func TestResponseBuilder(t *testing.T) {
 
 	config := mocksnowdrop.NewMockConfigManager(t)
 	config.EXPECT().GetEmbedResourceFolder().Return(testutils.GetResourceFS())
-	bundle, err := trans.NewI18nBundle(config)
+	bundle, err := translation.NewI18nBundle(config)
 	require.NoError(t, err)
 
 	w := httptest.NewRecorder()
-	r := trans.WithLocalizer(
+	r := translation.WithLocalizer(
 		httptest.NewRequest(http.MethodGet, "/", nil),
 		i18n.NewLocalizer(bundle),
+	)
+
+	validator, err := validation.NewValidator()
+	require.NoError(t, err)
+
+	r = validation.WithUniversalTranslator(
+		r,
+		validator.UniversalTranslator.GetFallback(),
 	)
 
 	web.NewResponseBuilder(w, r).

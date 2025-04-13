@@ -1,10 +1,7 @@
-package trans
+package translation
 
 import (
-	"context"
-	"errors"
 	"io/fs"
-	"net/http"
 	"path/filepath"
 	"strings"
 
@@ -13,12 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 	snowdrop "internal.snowdrop/framework"
 )
-
-type LocalizerCtxKey string
-
-const localizerCtxID LocalizerCtxKey = "LocalizerCtxID"
-
-var ErrNoLocalizer = errors.New("there is no *i18n.Localizer in the given context")
 
 func NewI18nBundle(config snowdrop.ConfigManager) (*i18n.Bundle, error) {
 	bundle := i18n.NewBundle(language.English)
@@ -38,18 +29,6 @@ func NewI18nBundle(config snowdrop.ConfigManager) (*i18n.Bundle, error) {
 	}
 
 	return bundle, nil
-}
-
-func WithLocalizer(r *http.Request, localizer *i18n.Localizer) *http.Request {
-	return r.WithContext(context.WithValue(r.Context(), localizerCtxID, localizer))
-}
-
-func GetLocalizer(r *http.Request) (*i18n.Localizer, error) {
-	if localizer, ok := r.Context().Value(localizerCtxID).(*i18n.Localizer); ok {
-		return localizer, nil
-	}
-
-	return nil, ErrNoLocalizer
 }
 
 // glob is a function that performs a glob-style pattern matching on a given file system (fs.FS)

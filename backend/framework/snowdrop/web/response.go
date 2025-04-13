@@ -12,7 +12,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/samber/lo"
-	"internal.snowdrop/framework/trans"
+	"internal.snowdrop/framework/translation"
+	"internal.snowdrop/framework/validation"
 )
 
 type Pagination struct {
@@ -40,7 +41,12 @@ type ResponseBuilder struct {
 }
 
 func NewResponseBuilder(w http.ResponseWriter, r *http.Request) *ResponseBuilder {
-	localizer, err := trans.GetLocalizer(r)
+	localizer, err := translation.GetLocalizer(r)
+	if err != nil {
+		panic(err)
+	}
+
+	validationTranslator, err := validation.GetValidationTranslator(r)
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +55,7 @@ func NewResponseBuilder(w http.ResponseWriter, r *http.Request) *ResponseBuilder
 		w:                    w,
 		r:                    r,
 		localizer:            localizer,
-		validationTranslator: GetValidationTranslator(r),
+		validationTranslator: validationTranslator,
 		httpCode:             http.StatusOK,
 		result:               Response[any]{},
 	}
