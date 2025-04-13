@@ -7,9 +7,9 @@ import (
 	ut "github.com/go-playground/universal-translator"
 )
 
-type universalTranslatorCtxKey string
+type universalTranslatorContextKey int
 
-const universalTranslatorIdentifier universalTranslatorCtxKey = "ut.Translator"
+const universalTranslatorIdentifier universalTranslatorContextKey = iota
 
 // GetValidationTranslator retrieves the universal translator from request context.
 //
