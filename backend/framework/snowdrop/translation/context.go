@@ -8,9 +8,9 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 )
 
-type localizerCtxKey string
+type localizerContextKey int
 
-const localizerCtxID localizerCtxKey = "LocalizerCtxID"
+const localizerCtxID localizerContextKey = iota
 
 var ErrNoLocalizer = errors.New("there is no *i18n.Localizer in the given context")
 
