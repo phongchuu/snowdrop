@@ -137,7 +137,7 @@ func setupMetrics(lifecycle fx.Lifecycle, r *resource.Resource) error {
 }
 
 func setupLogging(lifecycle fx.Lifecycle, r *resource.Resource) error {
-	stdoutExporter, err := stdoutlog.New(stdoutlog.WithPrettyPrint())
+	stdoutExporter, err := stdoutlog.New()
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func setupLogging(lifecycle fx.Lifecycle, r *resource.Resource) error {
 		return err
 	}
 
-	stdoutProcesor := log.NewSimpleProcessor(
+	stdoutProcesor := log.NewBatchProcessor(
 		stdoutExporter,
 	)
 
