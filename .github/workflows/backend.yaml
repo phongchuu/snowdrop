@@ -63,7 +63,7 @@ jobs:
       - name: Run golangci-linter
         uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd
         with:
-          version: v2.0.2
+          version: v2.1.1
           problem-matchers: true
           working-directory: ${{ matrix.dir }}/${{ matrix.module }}
           args: --output.sarif.path ${{ matrix.module }}/report.sarif
