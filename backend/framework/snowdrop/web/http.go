@@ -61,13 +61,6 @@ func NewRouter(params RouteParams) *chi.Mux {
 	}
 
 	middlewares := map[int]func(http.Handler) http.Handler{
-		0: otelhttp.NewMiddleware(
-			"__placeholder__",
-			otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents),
-			otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
-				return fmt.Sprintf("%s %s", r.Method, r.URL.Path)
-			}),
-		),
 		1:  chiMiddleware.CleanPath,
 		20: snowdropMiddleware.NewRecovererMiddleware(params.Logger),
 		60: snowdropMiddleware.NewI18nMiddleware(
@@ -119,7 +112,13 @@ func newHTTPServer(
 	srv := &http.Server{
 		Addr:              net.JoinHostPort("", config.GetAppPort()),
 		ReadHeaderTimeout: readHeaderTimeout,
-		Handler:           httpHandler,
+		Handler: otelhttp.NewHandler(httpHandler,
+			"",
+			otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents),
+			otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
+				return fmt.Sprintf("%s %s", r.Method, r.URL.Path)
+			}),
+		),
 	}
 
 	lc.Append(fx.Hook{
