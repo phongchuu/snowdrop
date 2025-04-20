@@ -2,8 +2,12 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"runtime/debug"
+
+	"internal.snowdrop/framework/response"
 )
 
 func NewRecovererMiddleware(
@@ -20,10 +24,16 @@ func NewRecovererMiddleware(
 						panic(rvr)
 					}
 
-					logger.ErrorContext(ctx, "Critical error occurred: Panic recovered")
+					logger.ErrorContext(
+						ctx,
+						fmt.Sprintf("Panic recovered: %v", rvr),
+						slog.String("stacktrace", fmt.Sprintf("%#v\n\n%s", rvr, debug.Stack())),
+					)
 
 					if r.Header.Get("Connection") != "Upgrade" {
-						w.WriteHeader(http.StatusInternalServerError)
+						response.NewBuilder(w, r).
+							Status(http.StatusInternalServerError).
+							JSON()
 					}
 				}
 			}(r.Context())

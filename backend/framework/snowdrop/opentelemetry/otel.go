@@ -1,4 +1,4 @@
-package log
+package opentelemetry
 
 import (
 	"context"
@@ -34,15 +34,13 @@ type SetupOtelSDKParams struct {
 
 type SetupOtelSDKResult struct {
 	fx.Out
-	Tracer otelTrace.Tracer
-	Logger *slog.Logger
+	Logger         *slog.Logger
+	Tracer         otelTrace.Tracer
+	MetricProvider *metric.MeterProvider
 }
 
 func SetupOtelSDK(p SetupOtelSDKParams) (SetupOtelSDKResult, error) {
-	// Initialize basic components
-	schemaName := "snowdrop.console"
-	tracer := otel.Tracer(schemaName)
-	logger := otelslog.NewLogger(schemaName, otelslog.WithSource(true))
+	const schemaName = "snowdrop.console"
 
 	// Create resource with service information
 	resource, err := createResource(p.Config)
@@ -51,17 +49,28 @@ func SetupOtelSDK(p SetupOtelSDKParams) (SetupOtelSDKResult, error) {
 	}
 
 	// Set up OpenTelemetry components
-	setupPropagator()
+	initializeTextMapPropagator()
 
-	if err := setupTracing(p.Lifecycle, resource); err != nil {
+	loggerProvider, err := newLoggerProvider(p.Lifecycle, resource)
+	if err != nil {
 		return SetupOtelSDKResult{}, err
 	}
 
-	if err := setupMetrics(p.Lifecycle, resource); err != nil {
+	logger := otelslog.NewLogger(
+		schemaName,
+		otelslog.WithSource(true),
+		otelslog.WithLoggerProvider(loggerProvider),
+	)
+
+	tracerProvider, err := newTracerProvider(p.Lifecycle, resource)
+	if err != nil {
 		return SetupOtelSDKResult{}, err
 	}
 
-	if err := setupLogging(p.Lifecycle, resource); err != nil {
+	tracer := tracerProvider.Tracer(schemaName)
+
+	metricProvider, err := newMetricProvider(p.Lifecycle, resource)
+	if err != nil {
 		return SetupOtelSDKResult{}, err
 	}
 
@@ -75,14 +84,15 @@ func SetupOtelSDK(p SetupOtelSDKParams) (SetupOtelSDKResult, error) {
 	}
 
 	return SetupOtelSDKResult{
-		Tracer: tracer,
-		Logger: logger,
+		Logger:         logger,
+		Tracer:         tracer,
+		MetricProvider: metricProvider,
 	}, nil
 }
 
 func createResource(config snowdrop.ConfigManager) (*resource.Resource, error) {
 	return resource.New(
-		context.TODO(),
+		context.Background(),
 		resource.WithContainer(),
 		resource.WithAttributes(
 			semconv.ServiceName("snowdrop.console"),
@@ -92,7 +102,7 @@ func createResource(config snowdrop.ConfigManager) (*resource.Resource, error) {
 	)
 }
 
-func setupPropagator() {
+func initializeTextMapPropagator() {
 	prop := propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
 		propagation.Baggage{},
@@ -100,13 +110,16 @@ func setupPropagator() {
 	otel.SetTextMapPropagator(prop)
 }
 
-func setupTracing(lifecycle fx.Lifecycle, r *resource.Resource) error {
+func newTracerProvider(
+	lifecycle fx.Lifecycle,
+	r *resource.Resource,
+) (*trace.TracerProvider, error) {
 	traceExporter, err := otlptrace.New(
 		context.Background(),
 		otlptracegrpc.NewClient(otlptracegrpc.WithInsecure()),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	tracerProvider := trace.NewTracerProvider(
@@ -117,13 +130,16 @@ func setupTracing(lifecycle fx.Lifecycle, r *resource.Resource) error {
 	lifecycle.Append(fx.StopHook(tracerProvider.Shutdown))
 	otel.SetTracerProvider(tracerProvider)
 
-	return nil
+	return tracerProvider, nil
 }
 
-func setupMetrics(lifecycle fx.Lifecycle, r *resource.Resource) error {
+func newMetricProvider(
+	lifecycle fx.Lifecycle,
+	r *resource.Resource,
+) (*metric.MeterProvider, error) {
 	metricExporter, err := otlpmetricgrpc.New(context.TODO(), otlpmetricgrpc.WithInsecure())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	meterProvider := metric.NewMeterProvider(
@@ -133,21 +149,21 @@ func setupMetrics(lifecycle fx.Lifecycle, r *resource.Resource) error {
 	lifecycle.Append(fx.StopHook(meterProvider.Shutdown))
 	otel.SetMeterProvider(meterProvider)
 
-	return nil
+	return meterProvider, nil
 }
 
-func setupLogging(lifecycle fx.Lifecycle, r *resource.Resource) error {
+func newLoggerProvider(lifecycle fx.Lifecycle, r *resource.Resource) (*log.LoggerProvider, error) {
 	stdoutExporter, err := stdoutlog.New()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	logExporter, err := otlploggrpc.New(context.Background(), otlploggrpc.WithInsecure())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	stdoutProcesor := log.NewBatchProcessor(
+	stdoutProcesor := log.NewSimpleProcessor(
 		stdoutExporter,
 	)
 
@@ -163,5 +179,5 @@ func setupLogging(lifecycle fx.Lifecycle, r *resource.Resource) error {
 	lifecycle.Append(fx.StopHook(loggerProvider.Shutdown))
 	global.SetLoggerProvider(loggerProvider)
 
-	return nil
+	return loggerProvider, nil
 }

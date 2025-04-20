@@ -29,4 +29,7 @@ type ConfigManager interface {
 
 	// GetSupportedLanguages returns a list of supported language tags.
 	GetSupportedLanguages() []language.Tag
+
+	// GetMaxRequestSize returns the maximum request size in bytes.
+	GetMaxRequestSize() int64
 }

@@ -12,8 +12,6 @@ type universalTranslatorContextKey int
 const universalTranslatorIdentifier universalTranslatorContextKey = iota
 
 // GetValidationTranslator retrieves the universal translator from request context.
-//
-//nolint:ireturn
 func GetValidationTranslator(r *http.Request) (ut.Translator, error) {
 	if translator, ok := r.Context().Value(universalTranslatorIdentifier).(ut.Translator); ok {
 		return translator, nil

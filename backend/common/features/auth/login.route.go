@@ -11,6 +11,7 @@ import (
 	"go.uber.org/fx"
 	"internal.snowdrop/common/features/usermgt"
 	snowdrop "internal.snowdrop/framework"
+	"internal.snowdrop/framework/response"
 	"internal.snowdrop/framework/session"
 	"internal.snowdrop/framework/web"
 )
@@ -66,9 +67,7 @@ func (loginRoute LoginRoute) Tags() []snowdrop.RouteTag {
 
 // ServeHTTP implements web.HTTPHandler.
 func (loginRoute LoginRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	span := trace.SpanFromContext(r.Context())
-	w.Header().Set("Traceparent", span.SpanContext().TraceID().String())
-	response := web.NewResponseBuilder(w, r)
+	response := response.NewBuilder(w, r)
 	binder := web.NewBinder(web.WithValidator(loginRoute.validator))
 
 	_, bindingDataSpan := loginRoute.tracer.Start(
@@ -83,9 +82,7 @@ func (loginRoute LoginRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var validationErrs validator.ValidationErrors
 		if errors.As(err, &validationErrs) {
 			bindingDataSpan.SetStatus(codes.Error, "Request body is invalid")
-			response.Status(http.StatusBadRequest).
-				Data(validationErrs).
-				JSON()
+			response.Status(http.StatusBadRequest).Errors(validationErrs).JSON()
 
 			return
 		}

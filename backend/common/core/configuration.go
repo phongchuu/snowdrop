@@ -53,6 +53,10 @@ func (appCfg AppConfig) GetSupportedLanguages() []language.Tag {
 	return appCfg.supportedLanguages
 }
 
+func (appCfg AppConfig) GetMaxRequestSize() int64 {
+	return 1 << 20 // 1 MB
+}
+
 func initHTTPServerConfig(provider *viper.Viper, appCfg *AppConfig) {
 	port := provider.GetString("app_port")
 

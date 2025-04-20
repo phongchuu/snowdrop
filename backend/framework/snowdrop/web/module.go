@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"go.uber.org/fx"
-	"internal.snowdrop/framework/log"
 )
 
 func NewModule() fx.Option {
@@ -13,7 +12,6 @@ func NewModule() fx.Option {
 		fx.Provide(
 			fx.Annotate(NewRouter, fx.As(new(http.Handler))),
 			newHTTPServer,
-			log.SetupOtelSDK,
 		),
 	)
 }

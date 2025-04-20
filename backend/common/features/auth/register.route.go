@@ -7,6 +7,7 @@ import (
 	"go.uber.org/fx"
 	"internal.snowdrop/common/features/usermgt"
 	snowdrop "internal.snowdrop/framework"
+	"internal.snowdrop/framework/response"
 	"internal.snowdrop/framework/web"
 )
 
@@ -53,13 +54,13 @@ func (registerRoute RegisterRoute) Tags() []snowdrop.RouteTag {
 
 // ServeHTTP implements web.HTTPHandler.
 func (registerRoute RegisterRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	response := web.NewResponseBuilder(w, r)
+	response := response.NewBuilder(w, r)
 	binder := web.NewBinder(web.WithValidator(registerRoute.validator))
 
 	var formData RegisterFormData
 
 	if err := binder.JSON(r, &formData); err != nil {
-		response.Status(http.StatusBadRequest).Message(err.Error()).JSON()
+		response.Status(http.StatusBadRequest).Errors(err).JSON()
 
 		return
 	}

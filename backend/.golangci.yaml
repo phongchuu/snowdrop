@@ -149,6 +149,7 @@ linters:
         - anon
         - generic
         - fx.Option
+        - universal-translator.Translator
     lll:
       line-length: 120
       tab-width: 1
@@ -161,7 +162,6 @@ linters:
         - funlen
         - gocognit
         - lll
-        - ireturn
     sloglint:
       no-mixed-args: true
       kv-only: false

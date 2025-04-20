@@ -1,8 +1,9 @@
-package web
+package response
 
 import (
-	"bytes"
 	"encoding/json"
+	"errors"
+	"log"
 	"math"
 	"net/http"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/samber/lo"
+	"internal.snowdrop/framework/request"
 	"internal.snowdrop/framework/translation"
 	"internal.snowdrop/framework/validation"
 )
@@ -31,7 +33,7 @@ type Response[T any] struct {
 	Pagination Pagination `json:"pagination,omitzero"`
 }
 
-type ResponseBuilder struct {
+type Builder struct {
 	w                    http.ResponseWriter
 	r                    *http.Request
 	localizer            *i18n.Localizer
@@ -40,7 +42,7 @@ type ResponseBuilder struct {
 	result               Response[any]
 }
 
-func NewResponseBuilder(w http.ResponseWriter, r *http.Request) *ResponseBuilder {
+func NewBuilder(w http.ResponseWriter, r *http.Request) *Builder {
 	localizer, err := translation.GetLocalizer(r)
 	if err != nil {
 		panic(err)
@@ -51,7 +53,7 @@ func NewResponseBuilder(w http.ResponseWriter, r *http.Request) *ResponseBuilder
 		panic(err)
 	}
 
-	return &ResponseBuilder{
+	return &Builder{
 		w:                    w,
 		r:                    r,
 		localizer:            localizer,
@@ -61,7 +63,7 @@ func NewResponseBuilder(w http.ResponseWriter, r *http.Request) *ResponseBuilder
 	}
 }
 
-func (r *ResponseBuilder) setDefaults() {
+func (r *Builder) setDefaults() {
 	r.result.Timestamp = time.Now()
 
 	if r.result.Status == 0 {
@@ -75,17 +77,17 @@ func (r *ResponseBuilder) setDefaults() {
 	}
 }
 
-func (r *ResponseBuilder) Status(code int) *ResponseBuilder {
+func (r *Builder) Status(code int) *Builder {
 	r.httpCode = code
 	r.result.Status = code
 
 	return r
 }
 
-func (r *ResponseBuilder) Message(
+func (r *Builder) Message(
 	messageID string,
 	templateDataMaps ...map[string]any,
-) *ResponseBuilder {
+) *Builder {
 	translatedMessge, err := r.localizer.Localize(&i18n.LocalizeConfig{
 		MessageID:    messageID,
 		TemplateData: lo.Assign(templateDataMaps...),
@@ -100,21 +102,36 @@ func (r *ResponseBuilder) Message(
 	return r
 }
 
-func (r *ResponseBuilder) Data(data any) *ResponseBuilder {
-	if validationErrs, ok := data.(validator.ValidationErrors); ok {
+func (r *Builder) Errors(errs error) *Builder {
+	var validationErrs validator.ValidationErrors
+	if errors.As(errs, &validationErrs) {
 		r.result.Data = validationErrs.Translate(r.validationTranslator)
-	} else {
-		r.result.Data = data
+		r.Status(http.StatusBadRequest)
+
+		return r
+	}
+
+	var maxBytesErr *http.MaxBytesError
+	if errors.As(errs, &maxBytesErr) {
+		r.Status(http.StatusRequestEntityTooLarge)
+
+		return r
 	}
 
 	return r
 }
 
-func (r *ResponseBuilder) Pagination(totalRows int) *ResponseBuilder {
-	pageSize := GetPageSize(r.r)
+func (r *Builder) Data(data any) *Builder {
+	r.result.Data = data
+
+	return r
+}
+
+func (r *Builder) Pagination(totalRows int) *Builder {
+	pageSize := request.GetPageSize(r.r)
 
 	r.result.Pagination = Pagination{
-		Page:         GetPage(r.r),
+		Page:         request.GetPage(r.r),
 		PageSize:     pageSize,
 		TotalRecords: totalRows,
 		TotalPages:   int(math.Ceil(float64(totalRows) / float64(pageSize))),
@@ -123,29 +140,26 @@ func (r *ResponseBuilder) Pagination(totalRows int) *ResponseBuilder {
 	return r
 }
 
-func (r *ResponseBuilder) NoContent() {
+func (r *Builder) NoContent() {
 	r.w.WriteHeader(http.StatusNoContent)
 }
 
-func (r *ResponseBuilder) JSON() {
-	buf := &bytes.Buffer{}
-	enc := json.NewEncoder(buf)
-
+func (r *Builder) JSON() {
 	r.setDefaults()
-
-	if err := enc.Encode(r.result); err != nil {
-		http.Error(r.w, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
 
 	r.w.Header().Set("Content-Type", "application/json")
 	r.w.Header().Set("X-Content-Type-Options", "nosniff")
 	r.w.WriteHeader(r.result.Status)
-	_, _ = r.w.Write(buf.Bytes())
+
+	enc := json.NewEncoder(r.w)
+	if err := enc.Encode(r.result); err != nil {
+		log.Printf("failed to encode JSON response: %v", err)
+
+		return
+	}
 }
 
-func (r *ResponseBuilder) HTML(html string) {
+func (r *Builder) HTML(html string) {
 	r.w.Header().Set("Content-Type", "text/html")
 	r.w.Header().Set("X-Content-Type-Options", "nosniff")
 	r.w.WriteHeader(r.httpCode)

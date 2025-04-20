@@ -13,9 +13,9 @@ import (
 	snowdrop "internal.snowdrop/framework"
 )
 
-// newDatabase creates a new database connection pool.
+// NewDatabase creates a new database connection pool.
 // Registers lifecycle hooks for connection health checks and cleanup.
-func newDatabase(
+func NewDatabase(
 	lc fx.Lifecycle,
 	logger *slog.Logger,
 	config snowdrop.ConfigManager,
@@ -45,9 +45,9 @@ func newDatabase(
 	return db, nil
 }
 
-// executeDatabaseUpgrade runs database migrations on application startup.
+// ExecuteDatabaseUpgrade runs database migrations on application startup.
 // Uses goose migration tool with configurations from the provided ConfigManager.
-func executeDatabaseUpgrade(
+func ExecuteDatabaseUpgrade(
 	lc fx.Lifecycle,
 	logger *slog.Logger,
 	db *sql.DB,
@@ -68,12 +68,12 @@ func NewModule() fx.Option {
 	return fx.Module(
 		"DatabaseModule",
 		fx.Provide(
-			newDatabase,
+			NewDatabase,
 			fx.Annotate(
 				NewTransactionManager,
 				fx.As(new(snowdrop.TransactionManager)),
 			),
 		),
-		fx.Invoke(executeDatabaseUpgrade),
+		fx.Invoke(ExecuteDatabaseUpgrade),
 	)
 }

@@ -1,9 +1,18 @@
-package web
+package request
 
 import (
 	"net/http"
 	"strconv"
 )
+
+// defaultPage is the default page number for pagination.
+const defaultPage = 1
+
+// defaultPageSize is the default number of items per page for pagination.
+const defaultPageSize = 10
+
+// maxPageSize is the maximum number of items per page for pagination.
+const maxPageSize = 100
 
 // GetPage retrieves the page number from the URL query parameters of the given HTTP request.
 // If the "page" parameter is not provided or cannot be converted to an integer,
