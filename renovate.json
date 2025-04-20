@@ -5,7 +5,7 @@
         ":semanticCommitTypeAll(chore)"
     ],
     "additionalReviewers": ["phongphongg"],
-    "addLabels": ["dependencies"],
+    "addLabels": ["dependencies", "waiting for maintainer"],
     "ignoreDeps": [
         "internal.snowdrop/framework",
         "internal.snowdrop/common",
