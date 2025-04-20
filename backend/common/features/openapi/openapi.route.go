@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	snowdrop "internal.snowdrop/framework"
+	"internal.snowdrop/framework/response"
 	"internal.snowdrop/framework/web"
 )
 
@@ -32,7 +33,7 @@ func (o *DocumentationRoute) Tags() []snowdrop.RouteTag {
 
 // ServeHTTP implements web.HTTPHandler.
 func (o *DocumentationRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	responseCtrl := web.NewResponseBuilder(w, r)
+	responseCtrl := response.NewBuilder(w, r)
 	responseCtrl.HTML(`
 	<!doctype html>
 	<html lang="en">

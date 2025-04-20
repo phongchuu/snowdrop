@@ -10,9 +10,9 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"internal.snowdrop/framework/response"
 	"internal.snowdrop/framework/translation"
 	"internal.snowdrop/framework/validation"
-	"internal.snowdrop/framework/web"
 	mocksnowdrop "internal.snowdrop/testing/mocks/internal.snowdrop/framework"
 	"internal.snowdrop/testing/testutils"
 )
@@ -39,12 +39,12 @@ func TestResponseBuilder(t *testing.T) {
 		validator.UniversalTranslator.GetFallback(),
 	)
 
-	web.NewResponseBuilder(w, r).
+	response.NewBuilder(w, r).
 		Status(http.StatusOK).
 		Data(map[string]string{"message": "OK"}).
 		JSON()
 
-	var result web.Response[map[string]string]
+	var result response.Response[map[string]string]
 	err = json.Unmarshal(w.Body.Bytes(), &result)
 	require.NoError(t, err)
 

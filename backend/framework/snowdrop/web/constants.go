@@ -11,15 +11,6 @@ import (
 // by limiting the time allowed to read the headers.
 const readHeaderTimeout = 2 * time.Second
 
-// defaultPage is the default page number for pagination.
-const defaultPage = 1
-
-// defaultPageSize is the default number of items per page for pagination.
-const defaultPageSize = 10
-
-// maxPageSize is the maximum number of items per page for pagination.
-const maxPageSize = 100
-
 // PublicRoute is a route tag for public routes.
 const PublicRoute snowdrop.RouteTag = 0
 

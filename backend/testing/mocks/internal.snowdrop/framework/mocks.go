@@ -266,6 +266,50 @@ func (_c *MockConfigManager_GetEmbedResourceFolder_Call) RunAndReturn(run func()
 	return _c
 }
 
+// GetMaxRequestSize provides a mock function for the type MockConfigManager
+func (_mock *MockConfigManager) GetMaxRequestSize() int64 {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMaxRequestSize")
+	}
+
+	var r0 int64
+	if returnFunc, ok := ret.Get(0).(func() int64); ok {
+		r0 = returnFunc()
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+	return r0
+}
+
+// MockConfigManager_GetMaxRequestSize_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetMaxRequestSize'
+type MockConfigManager_GetMaxRequestSize_Call struct {
+	*mock.Call
+}
+
+// GetMaxRequestSize is a helper method to define mock.On call
+func (_e *MockConfigManager_Expecter) GetMaxRequestSize() *MockConfigManager_GetMaxRequestSize_Call {
+	return &MockConfigManager_GetMaxRequestSize_Call{Call: _e.mock.On("GetMaxRequestSize")}
+}
+
+func (_c *MockConfigManager_GetMaxRequestSize_Call) Run(run func()) *MockConfigManager_GetMaxRequestSize_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockConfigManager_GetMaxRequestSize_Call) Return(n int64) *MockConfigManager_GetMaxRequestSize_Call {
+	_c.Call.Return(n)
+	return _c
+}
+
+func (_c *MockConfigManager_GetMaxRequestSize_Call) RunAndReturn(run func() int64) *MockConfigManager_GetMaxRequestSize_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetSupportedLanguages provides a mock function for the type MockConfigManager
 func (_mock *MockConfigManager) GetSupportedLanguages() []language.Tag {
 	ret := _mock.Called()

@@ -26,10 +26,11 @@ import (
 
 type RouteParams struct {
 	fx.In
+	Config                     snowdrop.ConfigManager
+	Logger                     *slog.Logger
 	I18nBundle                 *i18n.Bundle
 	HTTPRoutes                 []snowdrop.HTTPHandler `group:"http_routes"`
 	SessionManager             *session.Manager
-	Logger                     *slog.Logger
 	Tracer                     otelTrace.Tracer
 	UniversalTranslator        *ut.UniversalTranslator
 	GetPreferredUserLanguageFn snowdrop.GetPreferredUserLanguageFn
@@ -61,12 +62,15 @@ func NewRouter(params RouteParams) *chi.Mux {
 	}
 
 	middlewares := map[int]func(http.Handler) http.Handler{
-		1:  chiMiddleware.CleanPath,
-		20: snowdropMiddleware.NewRecovererMiddleware(params.Logger),
+		0: snowdropMiddleware.NewTraceMiddleware(),
+		1: chiMiddleware.CleanPath,
+		2: chiMiddleware.Compress(5),
+		3: snowdropMiddleware.NewRequestSizeMiddleware(params.Config.GetMaxRequestSize()),
 		60: snowdropMiddleware.NewI18nMiddleware(
 			params.I18nBundle,
 			params.GetPreferredUserLanguageFn,
 		),
+		61: snowdropMiddleware.NewRecovererMiddleware(params.Logger),
 		80: snowdropMiddleware.NewUniversalTranslatorMiddleware(
 			params.UniversalTranslator,
 			params.GetPreferredUserLanguageFn,

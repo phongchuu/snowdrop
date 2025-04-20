@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/fx"
 	"internal.snowdrop/framework/database"
+	"internal.snowdrop/framework/opentelemetry"
 	"internal.snowdrop/framework/session"
 	"internal.snowdrop/framework/translation"
 	"internal.snowdrop/framework/validation"
@@ -17,6 +18,7 @@ func Start(opts []fx.Option) {
 	time.Local = time.UTC
 
 	options := []fx.Option{
+		opentelemetry.NewModule(),
 		database.NewModule(),
 		web.NewModule(),
 		session.NewModule(),
