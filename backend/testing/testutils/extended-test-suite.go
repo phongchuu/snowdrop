@@ -12,6 +12,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
@@ -54,6 +55,8 @@ type ExtendedTestSuite struct {
 	connectionString string
 }
 
+// StartPostgresContainer starts a PostgreSQL container for tests.
+// The container is reusable and a snapshot is created after startup.
 func (s *ExtendedTestSuite) StartPostgresContainer() {
 	s.T().Helper()
 
@@ -66,6 +69,7 @@ func (s *ExtendedTestSuite) StartPostgresContainer() {
 		postgres.WithUsername("tester"),
 		postgres.WithPassword("Keep!t5ecret"),
 		postgres.BasicWaitStrategies(),
+		testcontainers.WithReuseByName("e2e-postgresql"),
 	)
 	s.Require().NoError(err, "Failed to start test postgres container")
 
@@ -76,20 +80,22 @@ func (s *ExtendedTestSuite) StartPostgresContainer() {
 	s.connectionString = pgContainer.MustConnectionString(ctx, "sslmode=disable")
 }
 
+// RestorePostgresContainer restores the PostgreSQL container to its initial state.
 func (s *ExtendedTestSuite) RestorePostgresContainer() {
 	s.T().Helper()
 
-	if s.pgContainer != nil {
+	if s.pgContainer.IsRunning() {
 		s.Require().NoError(s.pgContainer.Restore(s.T().Context()))
 	}
 }
 
-func (s *ExtendedTestSuite) TerminateTestPostgres() {
+// StopPostgresContainer stops the PostgreSQL container.
+func (s *ExtendedTestSuite) StopPostgresContainer() {
 	s.T().Helper()
 
-	if s.pgContainer != nil {
-		s.Require().NoError(s.pgContainer.Terminate(s.T().Context()))
-		s.pgContainer = nil
+	if s.pgContainer.IsRunning() {
+		err := s.pgContainer.Terminate(s.T().Context())
+		s.Require().NoError(err)
 	}
 }
 

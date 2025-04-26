@@ -5,5 +5,6 @@
     "files.trimTrailingWhitespace": true,
     "files.insertFinalNewline": true,
     "go.lintTool": "golangci-lint",
+    "go.testFlags": ["-count=1", "-race"],
     "editor.fontSize": 18
 }

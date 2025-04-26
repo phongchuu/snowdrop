@@ -27,16 +27,12 @@ func TestRegisterRouteSuite(t *testing.T) {
 	suite.Run(t, new(RegisterRouteTestSuite))
 }
 
-func (s *RegisterRouteTestSuite) SetupSuite() {
+func (s *RegisterRouteTestSuite) SetupTest() {
 	s.StartPostgresContainer()
 }
 
-func (s *RegisterRouteTestSuite) SetupTest() {
+func (s *RegisterRouteTestSuite) TearDownTest() {
 	s.RestorePostgresContainer()
-}
-
-func (s *RegisterRouteTestSuite) TearDownSuite() {
-	s.TerminateTestPostgres()
 }
 
 func (s *RegisterRouteTestSuite) TestRegisterRoute() {
