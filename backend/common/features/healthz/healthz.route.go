@@ -31,17 +31,17 @@ func NewHealthCheckRoute(
 }
 
 // Method implements web.HTTPHandler.
-func (h HealthCheckRoute) Method() string {
+func (HealthCheckRoute) Method() string {
 	return http.MethodGet
 }
 
 // Path implements web.HTTPHandler.
-func (h HealthCheckRoute) Path() string {
+func (HealthCheckRoute) Path() string {
 	return "/healthz"
 }
 
 // Tags implements web.HTTPHandler.
-func (h HealthCheckRoute) Tags() []snowdrop.RouteTag {
+func (HealthCheckRoute) Tags() []snowdrop.RouteTag {
 	return []snowdrop.RouteTag{web.PublicRoute}
 }
 

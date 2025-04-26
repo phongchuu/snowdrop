@@ -36,9 +36,8 @@ func (s *RegisterRouteTestSuite) TearDownTest() {
 }
 
 func (s *RegisterRouteTestSuite) TestRegisterRoute() {
-	di := s.SetupTestDependencyContainer(s.T())
+	di := s.SetupTestDependencyContainer()
 	router := s.DefaultWebRouter(
-		s.T(),
 		s.WithDI(di),
 		s.WithRoute(auth.NewRegisterRoute(auth.RegisterRouteParams{
 			Validator:   di.Validator,
@@ -50,7 +49,7 @@ func (s *RegisterRouteTestSuite) TestRegisterRoute() {
 }
 
 func (s *RegisterRouteTestSuite) TestRegisterRouteServeHTTP() {
-	di := s.SetupTestDependencyContainer(s.T())
+	di := s.SetupTestDependencyContainer()
 
 	userRepository := usermgt.NewUserRepository(usermgt.UserRepositoryParams{
 		TransactionManager: di.TransactionManager,
@@ -61,7 +60,6 @@ func (s *RegisterRouteTestSuite) TestRegisterRouteServeHTTP() {
 		UserService: userService,
 	})
 	router := s.DefaultWebRouter(
-		s.T(),
 		s.WithDI(di),
 		s.WithRoute(authRegisterRoute),
 	)
@@ -93,7 +91,7 @@ func (s *RegisterRouteTestSuite) TestRegisterRouteServeHTTP() {
 }
 
 func (s *RegisterRouteTestSuite) TestRegisterRouteHTTPValidationErrors() {
-	di := s.SetupTestDependencyContainer(s.T())
+	di := s.SetupTestDependencyContainer()
 
 	userRepository := usermgt.NewUserRepository(usermgt.UserRepositoryParams{
 		TransactionManager: di.TransactionManager,
@@ -104,7 +102,6 @@ func (s *RegisterRouteTestSuite) TestRegisterRouteHTTPValidationErrors() {
 		UserService: userService,
 	})
 	router := s.DefaultWebRouter(
-		s.T(),
 		s.WithDI(di),
 		s.WithRoute(authRegisterRoute),
 	)

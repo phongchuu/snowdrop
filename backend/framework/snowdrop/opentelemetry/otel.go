@@ -16,14 +16,15 @@ import (
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/log"
+	otelSDKLog "go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/resource"
+	otelSDKResource "go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 	otelTrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 	snowdrop "internal.snowdrop/framework"
+	"internal.snowdrop/framework/log"
 )
 
 type SetupOtelSDKParams struct {
@@ -79,7 +80,7 @@ func SetupOtelSDK(p SetupOtelSDKParams) (SetupOtelSDKResult, error) {
 		logger.ErrorContext(
 			context.TODO(),
 			"otel runtime instrumentation failed:",
-			slog.Any("error", err),
+			log.ErrorLogAttr(err),
 		)
 	}
 
@@ -90,11 +91,11 @@ func SetupOtelSDK(p SetupOtelSDKParams) (SetupOtelSDKResult, error) {
 	}, nil
 }
 
-func createResource(config snowdrop.ConfigManager) (*resource.Resource, error) {
-	return resource.New(
+func createResource(config snowdrop.ConfigManager) (*otelSDKResource.Resource, error) {
+	return otelSDKResource.New(
 		context.Background(),
-		resource.WithContainer(),
-		resource.WithAttributes(
+		otelSDKResource.WithContainer(),
+		otelSDKResource.WithAttributes(
 			semconv.ServiceName("snowdrop.console"),
 			semconv.ServiceVersion(config.GetAppVersion()),
 			attribute.String("service.revision", config.GetAppRevision()),
@@ -112,7 +113,7 @@ func initializeTextMapPropagator() {
 
 func newTracerProvider(
 	lifecycle fx.Lifecycle,
-	r *resource.Resource,
+	r *otelSDKResource.Resource,
 ) (*trace.TracerProvider, error) {
 	traceExporter, err := otlptrace.New(
 		context.Background(),
@@ -135,7 +136,7 @@ func newTracerProvider(
 
 func newMetricProvider(
 	lifecycle fx.Lifecycle,
-	r *resource.Resource,
+	r *otelSDKResource.Resource,
 ) (*metric.MeterProvider, error) {
 	metricExporter, err := otlpmetricgrpc.New(context.TODO(), otlpmetricgrpc.WithInsecure())
 	if err != nil {
@@ -152,7 +153,10 @@ func newMetricProvider(
 	return meterProvider, nil
 }
 
-func newLoggerProvider(lifecycle fx.Lifecycle, r *resource.Resource) (*log.LoggerProvider, error) {
+func newLoggerProvider(
+	lifecycle fx.Lifecycle,
+	r *otelSDKResource.Resource,
+) (*otelSDKLog.LoggerProvider, error) {
 	stdoutExporter, err := stdoutlog.New()
 	if err != nil {
 		return nil, err
@@ -163,18 +167,18 @@ func newLoggerProvider(lifecycle fx.Lifecycle, r *resource.Resource) (*log.Logge
 		return nil, err
 	}
 
-	stdoutProcesor := log.NewSimpleProcessor(
+	stdoutProcesor := otelSDKLog.NewSimpleProcessor(
 		stdoutExporter,
 	)
 
-	httpProcessor := log.NewBatchProcessor(
+	httpProcessor := otelSDKLog.NewBatchProcessor(
 		logExporter,
 	)
 
-	loggerProvider := log.NewLoggerProvider(
-		log.WithProcessor(httpProcessor),
-		log.WithProcessor(stdoutProcesor),
-		log.WithResource(r),
+	loggerProvider := otelSDKLog.NewLoggerProvider(
+		otelSDKLog.WithProcessor(httpProcessor),
+		otelSDKLog.WithProcessor(stdoutProcesor),
+		otelSDKLog.WithResource(r),
 	)
 	lifecycle.Append(fx.StopHook(loggerProvider.Shutdown))
 	global.SetLoggerProvider(loggerProvider)

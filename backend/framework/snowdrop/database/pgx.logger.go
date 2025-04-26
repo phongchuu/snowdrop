@@ -35,7 +35,7 @@ func NewPgxLogger(logger *slog.Logger) *PgxLogger {
 }
 
 // Log implements tracelog.Logger.
-func (p *PgxLogger) Log(
+func (p PgxLogger) Log(
 	ctx context.Context,
 	level tracelog.LogLevel,
 	msg string,
@@ -52,14 +52,14 @@ func (p *PgxLogger) Log(
 }
 
 // isLevelSupported checks if the given log level is mapped in the logger.
-func (p *PgxLogger) isLevelSupported(level tracelog.LogLevel) bool {
+func (p PgxLogger) isLevelSupported(level tracelog.LogLevel) bool {
 	_, exists := p.levelMapping[level]
 
 	return exists
 }
 
 // processAttributes extracts SQL and converts data map to slog attributes.
-func (p *PgxLogger) processAttributes(data map[string]any) (string, []slog.Attr) {
+func (p PgxLogger) processAttributes(data map[string]any) (string, []slog.Attr) {
 	var sql string
 
 	attrs := lo.MapToSlice(data, func(key string, value any) slog.Attr {
@@ -76,7 +76,7 @@ func (p *PgxLogger) processAttributes(data map[string]any) (string, []slog.Attr)
 }
 
 // cleanSQL normalizes SQL by removing newlines and extra whitespace.
-func (p *PgxLogger) cleanSQL(rawSQL string) string {
+func (p PgxLogger) cleanSQL(rawSQL string) string {
 	// Replace newlines with spaces
 	noNewlines := p.newlinePattern.ReplaceAllString(rawSQL, " ")
 
@@ -85,7 +85,7 @@ func (p *PgxLogger) cleanSQL(rawSQL string) string {
 }
 
 // buildLogMessage constructs the formatted log message string.
-func (p *PgxLogger) buildLogMessage(msg string, timeValue any, sql string) string {
+func (PgxLogger) buildLogMessage(msg string, timeValue any, sql string) string {
 	var builder strings.Builder
 
 	builder.Grow(64) // Pre-allocate buffer for typical message size

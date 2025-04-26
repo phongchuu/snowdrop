@@ -38,29 +38,29 @@ func NewRegisterRoute(p RegisterRouteParams) RegisterRoute {
 }
 
 // Method implements web.HTTPHandler.
-func (registerRoute RegisterRoute) Method() string {
+func (RegisterRoute) Method() string {
 	return http.MethodPost
 }
 
 // Path implements web.HTTPHandler.
-func (registerRoute RegisterRoute) Path() string {
+func (RegisterRoute) Path() string {
 	return "/auth/register"
 }
 
 // Tags implements web.HTTPHandler.
-func (registerRoute RegisterRoute) Tags() []snowdrop.RouteTag {
+func (RegisterRoute) Tags() []snowdrop.RouteTag {
 	return []snowdrop.RouteTag{web.PublicRoute}
 }
 
 // ServeHTTP implements web.HTTPHandler.
 func (registerRoute RegisterRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	response := response.NewBuilder(w, r)
+	responseBuilder := response.NewBuilder(w, r)
 	binder := web.NewBinder(web.WithValidator(registerRoute.validator))
 
 	var formData RegisterFormData
 
 	if err := binder.JSON(r, &formData); err != nil {
-		response.Status(http.StatusBadRequest).Errors(err).JSON()
+		responseBuilder.Status(http.StatusBadRequest).Errors(err).JSON()
 
 		return
 	}
@@ -71,10 +71,10 @@ func (registerRoute RegisterRoute) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		Email:       formData.Email,
 	})
 	if err != nil {
-		response.Status(http.StatusBadRequest).Message(err.Error()).JSON()
+		responseBuilder.Status(http.StatusBadRequest).Message(err.Error()).JSON()
 
 		return
 	}
 
-	response.Status(http.StatusCreated).Data(userDTO).JSON()
+	responseBuilder.Status(http.StatusCreated).Data(userDTO).JSON()
 }

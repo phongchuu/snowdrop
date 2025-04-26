@@ -12,27 +12,27 @@ type DocumentationRoute struct{}
 
 var _ snowdrop.HTTPHandler = (*DocumentationRoute)(nil)
 
-func NewDocumentationRoute() *DocumentationRoute {
-	return &DocumentationRoute{}
+func NewDocumentationRoute() DocumentationRoute {
+	return DocumentationRoute{}
 }
 
 // Method implements web.HTTPHandler.
-func (o *DocumentationRoute) Method() string {
+func (DocumentationRoute) Method() string {
 	return http.MethodGet
 }
 
 // Path implements web.HTTPHandler.
-func (o *DocumentationRoute) Path() string {
+func (DocumentationRoute) Path() string {
 	return "/api/openapi"
 }
 
 // Tags implements web.HTTPHandler.
-func (o *DocumentationRoute) Tags() []snowdrop.RouteTag {
+func (DocumentationRoute) Tags() []snowdrop.RouteTag {
 	return []snowdrop.RouteTag{web.PublicRoute}
 }
 
 // ServeHTTP implements web.HTTPHandler.
-func (o *DocumentationRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (DocumentationRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	responseCtrl := response.NewBuilder(w, r)
 	responseCtrl.HTML(`
 	<!doctype html>
