@@ -22,22 +22,6 @@ func NewTransactionManager(db *sql.DB) *TransactionManagerImpl {
 	return &TransactionManagerImpl{db: db}
 }
 
-func (m TransactionManagerImpl) configureTransaction(ctx context.Context, tx *sql.Tx) error {
-	_, err := tx.ExecContext(
-		ctx,
-		`SELECT set_config('session.requester', $1, true)
-        WHERE current_setting('session.requester', true) IS DISTINCT FROM $1;`,
-		//nolint:godox // This is a placeholder representing the requester, to be updated in the future
-		// TODO: Get the requester from the context
-		"system",
-	)
-	if err != nil {
-		return fmt.Errorf("failed to set session.requester: %w", err)
-	}
-
-	return nil
-}
-
 func (m TransactionManagerImpl) NewTransaction(
 	ctx context.Context,
 	opts *sql.TxOptions,
@@ -56,9 +40,25 @@ func (m TransactionManagerImpl) NewTransaction(
 	return tx, nil
 }
 
-func (m TransactionManagerImpl) GetCurrentTx(ctx context.Context) *sql.Tx {
+func (TransactionManagerImpl) GetCurrentTx(ctx context.Context) *sql.Tx {
 	if tx, ok := ctx.Value(transactionManagerCtxKey).(*sql.Tx); ok {
 		return tx
+	}
+
+	return nil
+}
+
+func (TransactionManagerImpl) configureTransaction(ctx context.Context, tx *sql.Tx) error {
+	_, err := tx.ExecContext(
+		ctx,
+		`SELECT set_config('session.requester', $1, true)
+        WHERE current_setting('session.requester', true) IS DISTINCT FROM $1;`,
+		//nolint:godox // This is a placeholder representing the requester, to be updated in the future
+		// TODO: Get the requester from the context
+		"system",
+	)
+	if err != nil {
+		return fmt.Errorf("failed to set session.requester: %w", err)
 	}
 
 	return nil

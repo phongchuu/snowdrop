@@ -9,3 +9,7 @@ import (
 func ErrorLogAttr(err error) slog.Attr {
 	return slog.Any("error", err)
 }
+
+func StacktraceLogAttr(stacktrace string) slog.Attr {
+	return slog.String("stacktrace", stacktrace)
+}

@@ -29,6 +29,30 @@ type AppConfig struct {
 
 var _ snowdrop.ConfigManager = (*AppConfig)(nil)
 
+// NewAppConfig initializes and returns a new application configuration.
+// It sets up environment variables with "app" prefix and default configuration values.
+func NewAppConfig(moduleConfig ModuleConfig) (AppConfig, error) {
+	// Create a new Viper instance
+	viperInstance := viper.New()
+	viperInstance.SetEnvPrefix("app")
+	viperInstance.AutomaticEnv()
+
+	config := AppConfig{
+		version:  moduleConfig.Version,
+		revision: moduleConfig.Revision,
+		supportedLanguages: []language.Tag{
+			language.English,    // en fallback language
+			language.Vietnamese, // vi
+		},
+		embedResourcesFolder: moduleConfig.EmbedResourcesFolder,
+	}
+
+	initHTTPServerConfig(viperInstance, &config)
+	initDatabaseConfig(viperInstance, &config)
+
+	return config, nil
+}
+
 func (appCfg AppConfig) GetEmbedResourceFolder() fs.FS {
 	return appCfg.embedResourcesFolder
 }
@@ -53,7 +77,7 @@ func (appCfg AppConfig) GetSupportedLanguages() []language.Tag {
 	return appCfg.supportedLanguages
 }
 
-func (appCfg AppConfig) GetMaxRequestSize() int64 {
+func (AppConfig) GetMaxRequestSize() int64 {
 	return 1 << 20 // 1 MB
 }
 
@@ -81,28 +105,4 @@ func initDatabaseConfig(provider *viper.Viper, appCfg *AppConfig) {
 		net.JoinHostPort(dbHost, dbPort),
 		dbName,
 	)
-}
-
-// NewAppConfig initializes and returns a new application configuration.
-// It sets up environment variables with "app" prefix and default configuration values.
-func NewAppConfig(moduleConfig ModuleConfig) (AppConfig, error) {
-	// Create a new Viper instance
-	viperInstance := viper.New()
-	viperInstance.SetEnvPrefix("app")
-	viperInstance.AutomaticEnv()
-
-	config := AppConfig{
-		version:  moduleConfig.Version,
-		revision: moduleConfig.Revision,
-		supportedLanguages: []language.Tag{
-			language.English,    // en fallback language
-			language.Vietnamese, // vi
-		},
-		embedResourcesFolder: moduleConfig.EmbedResourcesFolder,
-	}
-
-	initHTTPServerConfig(viperInstance, &config)
-	initDatabaseConfig(viperInstance, &config)
-
-	return config, nil
 }

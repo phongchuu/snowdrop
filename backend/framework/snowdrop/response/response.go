@@ -63,20 +63,6 @@ func NewBuilder(w http.ResponseWriter, r *http.Request) *Builder {
 	}
 }
 
-func (r *Builder) setDefaults() {
-	r.result.Timestamp = time.Now()
-
-	if r.result.Status == 0 {
-		r.result.Status = r.httpCode
-	}
-
-	if r.result.Message == "" {
-		r.result.Message = r.localizer.MustLocalize(&i18n.LocalizeConfig{
-			MessageID: strconv.Itoa(r.result.Status),
-		})
-	}
-}
-
 func (r *Builder) Status(code int) *Builder {
 	r.httpCode = code
 	r.result.Status = code
@@ -164,4 +150,18 @@ func (r *Builder) HTML(html string) {
 	r.w.Header().Set("X-Content-Type-Options", "nosniff")
 	r.w.WriteHeader(r.httpCode)
 	_, _ = r.w.Write([]byte(html))
+}
+
+func (r *Builder) setDefaults() {
+	r.result.Timestamp = time.Now()
+
+	if r.result.Status == 0 {
+		r.result.Status = r.httpCode
+	}
+
+	if r.result.Message == "" {
+		r.result.Message = r.localizer.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: strconv.Itoa(r.result.Status),
+		})
+	}
 }

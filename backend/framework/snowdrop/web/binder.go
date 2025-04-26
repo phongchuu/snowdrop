@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
+	validation "github.com/go-playground/validator/v10"
 )
 
 type Binder struct {
-	validator *validator.Validate
+	validator *validation.Validate
 }
 
 type BinderOptFn func(*Binder)
@@ -23,7 +23,7 @@ func NewBinder(optFns ...BinderOptFn) *Binder {
 	return binder
 }
 
-func WithValidator(validator *validator.Validate) BinderOptFn {
+func WithValidator(validator *validation.Validate) BinderOptFn {
 	return func(b *Binder) {
 		b.validator = validator
 	}

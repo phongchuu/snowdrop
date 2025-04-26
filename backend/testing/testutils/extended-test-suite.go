@@ -3,14 +3,12 @@ package testutils
 import (
 	"database/sql"
 	"log/slog"
-	"testing"
 
 	"github.com/go-chi/chi/v5"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/samber/lo"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -99,17 +97,17 @@ func (s *ExtendedTestSuite) StopPostgresContainer() {
 	}
 }
 
-func (s *ExtendedTestSuite) SetupTestDependencyContainer(tb testing.TB) TestContainer {
-	tb.Helper()
+func (s *ExtendedTestSuite) SetupTestDependencyContainer() TestContainer {
+	s.T().Helper()
 
 	// This is used for database migration
-	tb.Setenv("APP_DEFAULT_ADMIN_PASSWORD", "Keep!t5ecret")
+	s.T().Setenv("APP_DEFAULT_ADMIN_PASSWORD", "Keep!t5ecret")
 
-	fxLifecycle := fxtest.NewLifecycle(tb)
+	fxLifecycle := fxtest.NewLifecycle(s.T())
 	noopLogger := log.NewNoopLogger()
 
 	// ConfigManager
-	configManager := mocksnowdrop.NewMockConfigManager(tb)
+	configManager := mocksnowdrop.NewMockConfigManager(s.T())
 	configManager.EXPECT().GetEmbedResourceFolder().Return(GetResourceFS())
 	configManager.EXPECT().GetSupportedLanguages().Return([]language.Tag{
 		language.English,
@@ -122,23 +120,23 @@ func (s *ExtendedTestSuite) SetupTestDependencyContainer(tb testing.TB) TestCont
 
 	// I18nBundle
 	i18nBundle, err := translation.NewI18nBundle(configManager)
-	require.NoError(tb, err)
+	s.Require().NoError(err)
 
 	// Validator
 	validationModule, err := validation.NewValidator()
-	require.NoError(tb, err)
+	s.Require().NoError(err)
 
 	// GetPreferredUserLanguageFn
 	getPreferredUserLanguageFn := core.NewGetPreferredUserLanguageFn(configManager)
 
 	// Database
 	sqlDB, err := database.NewDatabase(fxLifecycle, noopLogger, configManager)
-	require.NoError(tb, err)
+	s.Require().NoError(err)
 	database.ExecuteDatabaseUpgrade(fxLifecycle, noopLogger, sqlDB, configManager)
 
 	// Start the lifecycle
 	fxLifecycle.RequireStart()
-	tb.Cleanup(func() {
+	s.T().Cleanup(func() {
 		fxLifecycle.RequireStop()
 	})
 
@@ -161,25 +159,24 @@ func (s *ExtendedTestSuite) SetupTestDependencyContainer(tb testing.TB) TestCont
 		NoopTracer:                 noop.NewTracerProvider().Tracer("noop-tracer"),
 		TransactionManager:         transactionManager,
 		SessionManager:             sessionManager,
-		MockUserService:            mockusermgt.NewMockUserService(tb),
+		MockUserService:            mockusermgt.NewMockUserService(s.T()),
 		DB:                         sqlDB,
 	}
 }
 
-func (s *ExtendedTestSuite) WithDI(di TestContainer) func(*DefaultWebRouterOptions) {
+func (*ExtendedTestSuite) WithDI(di TestContainer) func(*DefaultWebRouterOptions) {
 	return func(dwro *DefaultWebRouterOptions) {
 		dwro.di = &di
 	}
 }
 
-func (s *ExtendedTestSuite) WithRoute(route snowdrop.HTTPHandler) func(*DefaultWebRouterOptions) {
+func (*ExtendedTestSuite) WithRoute(route snowdrop.HTTPHandler) func(*DefaultWebRouterOptions) {
 	return func(dwro *DefaultWebRouterOptions) {
 		dwro.routes = append(dwro.routes, route)
 	}
 }
 
 func (s *ExtendedTestSuite) DefaultWebRouter(
-	t testing.TB,
 	optionFns ...func(*DefaultWebRouterOptions),
 ) *chi.Mux {
 	options := DefaultWebRouterOptions{}
@@ -189,7 +186,7 @@ func (s *ExtendedTestSuite) DefaultWebRouter(
 	}
 
 	if options.di == nil {
-		options.di = lo.ToPtr(s.SetupTestDependencyContainer(t))
+		options.di = lo.ToPtr(s.SetupTestDependencyContainer())
 	}
 
 	return web.NewRouter(web.RouteParams{

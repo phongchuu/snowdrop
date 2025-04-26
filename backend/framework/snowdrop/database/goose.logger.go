@@ -20,5 +20,6 @@ func (s gooseSlogger) Printf(format string, v ...any) {
 
 func (s gooseSlogger) Fatalf(format string, v ...any) {
 	s.logger.Error(fmt.Sprintf(format, v...))
+	//nolint:revive // The Fatalf function must terminate the program, so calling os.Exit here is necessary.
 	os.Exit(1)
 }

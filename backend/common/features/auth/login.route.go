@@ -51,23 +51,23 @@ func NewLoginRoute(p LoginRouteParams) LoginRoute {
 }
 
 // Method implements web.HTTPHandler.
-func (loginRoute LoginRoute) Method() string {
+func (LoginRoute) Method() string {
 	return http.MethodPost
 }
 
 // Path implements web.HTTPHandler.
-func (loginRoute LoginRoute) Path() string {
+func (LoginRoute) Path() string {
 	return "/auth/login"
 }
 
 // Tags implements web.HTTPHandler.
-func (loginRoute LoginRoute) Tags() []snowdrop.RouteTag {
+func (LoginRoute) Tags() []snowdrop.RouteTag {
 	return []snowdrop.RouteTag{web.PublicRoute}
 }
 
 // ServeHTTP implements web.HTTPHandler.
 func (loginRoute LoginRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	response := response.NewBuilder(w, r)
+	responseBuilder := response.NewBuilder(w, r)
 	binder := web.NewBinder(web.WithValidator(loginRoute.validator))
 
 	_, bindingDataSpan := loginRoute.tracer.Start(
@@ -82,31 +82,31 @@ func (loginRoute LoginRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var validationErrs validator.ValidationErrors
 		if errors.As(err, &validationErrs) {
 			bindingDataSpan.SetStatus(codes.Error, "Request body is invalid")
-			response.Status(http.StatusBadRequest).Errors(validationErrs).JSON()
+			responseBuilder.Status(http.StatusBadRequest).Errors(validationErrs).JSON()
 
 			return
 		}
 
 		bindingDataSpan.RecordError(err)
 		bindingDataSpan.SetStatus(codes.Error, "Something went wrong when binding request body")
-		response.Status(http.StatusInternalServerError).JSON()
+		responseBuilder.Status(http.StatusInternalServerError).JSON()
 
 		return
 	}
 
 	userDTO, err := loginRoute.userService.Login(r.Context(), formData.Username, formData.Password)
 	if err != nil {
-		response.Status(http.StatusBadRequest)
+		responseBuilder.Status(http.StatusBadRequest)
 
 		return
 	}
 
-	session, err := loginRoute.sessionManager.UpgradeSession(w, r, userDTO.ID)
+	sessionModel, err := loginRoute.sessionManager.UpgradeSession(w, r, userDTO.ID)
 	if err != nil {
-		response.Status(http.StatusBadRequest).Message(err.Error())
+		responseBuilder.Status(http.StatusBadRequest).Message(err.Error())
 
 		return
 	}
 
-	response.Status(http.StatusOK).Data(session)
+	responseBuilder.Status(http.StatusOK).Data(sessionModel)
 }

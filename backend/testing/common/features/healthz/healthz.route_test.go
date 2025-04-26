@@ -32,9 +32,8 @@ func (s *HealthzRouteTestSuite) TearDownTest() {
 }
 
 func (s *HealthzRouteTestSuite) TestHealthCheckRoute() {
-	di := s.SetupTestDependencyContainer(s.T())
+	di := s.SetupTestDependencyContainer()
 	router := s.DefaultWebRouter(
-		s.T(),
 		s.WithRoute(healthz.NewHealthCheckRoute(di.NoopLogger, di.DB)),
 	)
 
@@ -42,31 +41,31 @@ func (s *HealthzRouteTestSuite) TestHealthCheckRoute() {
 }
 
 func (s *HealthzRouteTestSuite) TestHealthCheckRouteServeHTTP() {
-	di := s.SetupTestDependencyContainer(s.T())
+	di := s.SetupTestDependencyContainer()
 	healthzRoute := healthz.NewHealthCheckRoute(di.NoopLogger, di.DB)
-	router := s.DefaultWebRouter(s.T(), s.WithRoute(healthzRoute))
+	router := s.DefaultWebRouter(s.WithRoute(healthzRoute))
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(healthzRoute.Method(), healthzRoute.Path(), nil)
 
 	router.ServeHTTP(w, r)
 
-	var response response.Response[map[string]string]
+	var result response.Response[map[string]string]
 
-	s.Require().NoError(json.Unmarshal(w.Body.Bytes(), &response))
+	s.Require().NoError(json.Unmarshal(w.Body.Bytes(), &result))
 
 	s.Equal(http.StatusOK, w.Code)
-	s.Equal(http.StatusOK, response.Status)
-	s.Equal("Your request was successfully completed.", response.Message)
-	s.Equal("available", response.Data["database"])
-	s.WithinDuration(time.Now(), response.Timestamp, time.Second)
+	s.Equal(http.StatusOK, result.Status)
+	s.Equal("Your request was successfully completed.", result.Message)
+	s.Equal("available", result.Data["database"])
+	s.WithinDuration(time.Now(), result.Timestamp, time.Second)
 }
 
 func (s *HealthzRouteTestSuite) TestHealthCheckRouteServeHTTPV2() {
-	di := s.SetupTestDependencyContainer(s.T())
+	di := s.SetupTestDependencyContainer()
 
 	healthzRoute := healthz.NewHealthCheckRoute(di.NoopLogger, di.DB)
-	router := s.DefaultWebRouter(s.T(), s.WithRoute(healthzRoute))
+	router := s.DefaultWebRouter(s.WithRoute(healthzRoute))
 
 	// Simulate a database connection error
 	s.StopPostgresContainer()
@@ -76,13 +75,13 @@ func (s *HealthzRouteTestSuite) TestHealthCheckRouteServeHTTPV2() {
 
 	router.ServeHTTP(w, r)
 
-	var response response.Response[map[string]string]
+	var result response.Response[map[string]string]
 
-	s.Require().NoError(json.Unmarshal(w.Body.Bytes(), &response))
+	s.Require().NoError(json.Unmarshal(w.Body.Bytes(), &result))
 
 	s.Equal(http.StatusServiceUnavailable, w.Code)
-	s.Equal(http.StatusServiceUnavailable, response.Status)
-	s.Equal("The service is currently unavailable; please try again later.", response.Message)
-	s.Equal("unavailable", response.Data["database"])
-	s.WithinDuration(time.Now(), response.Timestamp, time.Second)
+	s.Equal(http.StatusServiceUnavailable, result.Status)
+	s.Equal("The service is currently unavailable; please try again later.", result.Message)
+	s.Equal("unavailable", result.Data["database"])
+	s.WithinDuration(time.Now(), result.Timestamp, time.Second)
 }

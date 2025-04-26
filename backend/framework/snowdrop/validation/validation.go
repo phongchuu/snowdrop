@@ -7,9 +7,9 @@ import (
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/vi"
 	ut "github.com/go-playground/universal-translator"
-	"github.com/go-playground/validator/v10"
-	en_translations "github.com/go-playground/validator/v10/translations/en"
-	vi_translations "github.com/go-playground/validator/v10/translations/vi"
+	validation "github.com/go-playground/validator/v10"
+	enTranslation "github.com/go-playground/validator/v10/translations/en"
+	viTranslation "github.com/go-playground/validator/v10/translations/vi"
 	"go.uber.org/fx"
 	"golang.org/x/text/language"
 )
@@ -17,25 +17,25 @@ import (
 type Result struct {
 	fx.Out
 	UniversalTranslator *ut.UniversalTranslator
-	Validator           *validator.Validate
+	Validator           *validation.Validate
 }
 
 func NewValidator() (Result, error) {
 	universalTranslator := createUniversalTranslator()
-	validator := validator.New(validator.WithRequiredStructEnabled())
+	validator := validation.New(validation.WithRequiredStructEnabled())
 
 	err := errors.Join(
 		registerTranslation(
 			validator,
 			universalTranslator,
 			language.English.String(),
-			en_translations.RegisterDefaultTranslations,
+			enTranslation.RegisterDefaultTranslations,
 		),
 		registerTranslation(
 			validator,
 			universalTranslator,
 			language.Vietnamese.String(),
-			vi_translations.RegisterDefaultTranslations,
+			viTranslation.RegisterDefaultTranslations,
 		),
 	)
 	if err != nil {
@@ -49,17 +49,17 @@ func NewValidator() (Result, error) {
 }
 
 func createUniversalTranslator() *ut.UniversalTranslator {
-	en := en.New()
-	vi := vi.New()
+	enTranslator := en.New()
+	viTranslator := vi.New()
 
-	return ut.New(en, en, vi)
+	return ut.New(enTranslator, enTranslator, viTranslator)
 }
 
 func registerTranslation(
-	v *validator.Validate,
+	v *validation.Validate,
 	uni *ut.UniversalTranslator,
 	lang string,
-	registerFn func(*validator.Validate, ut.Translator) error,
+	registerFn func(*validation.Validate, ut.Translator) error,
 ) error {
 	trans, found := uni.GetTranslator(lang)
 
@@ -67,9 +67,5 @@ func registerTranslation(
 		return fmt.Errorf("%s: %w", lang, ErrTranslatorNotFound)
 	}
 
-	if err := registerFn(v, trans); err != nil {
-		return err
-	}
-
-	return nil
+	return registerFn(v, trans)
 }

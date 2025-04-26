@@ -94,7 +94,7 @@ func (m *Manager) GetSessionID(_ http.ResponseWriter, r *http.Request) (*string,
 	return &cookie.Value, nil
 }
 
-func (m *Manager) GetCurrentSession(r *http.Request) (*snowdrop.SessionModel, error) {
+func (*Manager) GetCurrentSession(r *http.Request) (*snowdrop.SessionModel, error) {
 	if session, ok := r.Context().Value(sessionCtxKey).(*snowdrop.SessionModel); ok {
 		return session, nil
 	}
@@ -128,43 +128,6 @@ func (m *Manager) UpgradeSession(
 			return session, nil
 		},
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     m.config.CookieName,
-		Value:    session.ID,
-		Path:     "/",
-		Secure:   m.config.SecureCookie,
-		HttpOnly: m.config.HTTPOnlyCookie,
-		SameSite: m.config.SameSite,
-		Expires:  session.ExpiresAt,
-	})
-
-	return session, nil
-}
-
-func (m *Manager) getOrCreateSession(
-	w http.ResponseWriter,
-	r *http.Request,
-) (*snowdrop.SessionModel, error) {
-	sessionID, getSessionIDErr := m.GetSessionID(w, r)
-	if getSessionIDErr != nil && !errors.Is(getSessionIDErr, http.ErrNoCookie) {
-		return nil, getSessionIDErr
-	}
-
-	if sessionID != nil {
-		session, err := m.GetSession(r.Context(), *sessionID)
-		if err != nil {
-			return nil, err
-		}
-
-		return session, nil
-	}
-
-	// Guest session
-	session, err := m.CreateSession(r.Context(), uuid.Nil)
 	if err != nil {
 		return nil, err
 	}
@@ -218,6 +181,43 @@ func (m *Manager) CreateSession(
 
 func (m *Manager) DestroySession(ctx context.Context, sessionID string) error {
 	return m.repository.DeleteSession(ctx, sessionID)
+}
+
+func (m *Manager) getOrCreateSession(
+	w http.ResponseWriter,
+	r *http.Request,
+) (*snowdrop.SessionModel, error) {
+	sessionID, getSessionIDErr := m.GetSessionID(w, r)
+	if getSessionIDErr != nil && !errors.Is(getSessionIDErr, http.ErrNoCookie) {
+		return nil, getSessionIDErr
+	}
+
+	if sessionID != nil {
+		session, err := m.GetSession(r.Context(), *sessionID)
+		if err != nil {
+			return nil, err
+		}
+
+		return session, nil
+	}
+
+	// Guest session
+	session, err := m.CreateSession(r.Context(), uuid.Nil)
+	if err != nil {
+		return nil, err
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     m.config.CookieName,
+		Value:    session.ID,
+		Path:     "/",
+		Secure:   m.config.SecureCookie,
+		HttpOnly: m.config.HTTPOnlyCookie,
+		SameSite: m.config.SameSite,
+		Expires:  session.ExpiresAt,
+	})
+
+	return session, nil
 }
 
 func (m *Manager) cleanupExpiredSessions() {
