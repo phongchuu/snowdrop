@@ -43,7 +43,12 @@ jobs:
             exit 1
           }
 
-          git diff --exit-code --quiet go.mod go.sum || {
+          go work sync || {
+            echo "go work sync failed."
+            exit 1
+          }
+
+          git diff --exit-code --quiet go.mod go.sum "$(go env GOWORK)" "$(go env GOWORK).sum" || {
             echo "git diff failed."
             exit 1
           }
