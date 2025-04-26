@@ -8,6 +8,10 @@ replace internal.snowdrop/console => ../console
 
 replace internal.snowdrop/framework => ../framework/snowdrop
 
+tool github.com/vektra/mockery/v3
+
+tool gotest.tools/gotestsum
+
 require (
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-playground/universal-translator v0.18.1
@@ -16,6 +20,7 @@ require (
 	github.com/nicksnyder/go-i18n/v2 v2.6.0
 	github.com/samber/lo v1.49.1
 	github.com/stretchr/testify v1.10.0
+	github.com/testcontainers/testcontainers-go v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0
 	go.opentelemetry.io/otel/trace v1.35.0
 	go.uber.org/fx v1.23.0
@@ -28,6 +33,7 @@ require (
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/bitfield/gotestdox v0.2.2 // indirect
 	github.com/brunoga/deep v1.2.4 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/chigopher/pathlib v0.19.1 // indirect
@@ -36,10 +42,12 @@ require (
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
+	github.com/dnephin/pflag v1.0.7 // indirect
 	github.com/docker/docker v28.0.1+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/ebitengine/purego v0.8.2 // indirect
+	github.com/fatih/color v1.17.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
@@ -51,6 +59,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -103,7 +112,6 @@ require (
 	github.com/spf13/viper v1.20.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/testcontainers/testcontainers-go v0.37.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/vektra/mockery/v3 v3.2.4 // indirect
@@ -127,6 +135,5 @@ require (
 	golang.org/x/term v0.31.0 // indirect
 	golang.org/x/tools v0.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gotest.tools/gotestsum v1.12.1 // indirect
 )
-
-tool github.com/vektra/mockery/v3

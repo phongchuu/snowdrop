@@ -23,16 +23,12 @@ func TestHealthzRouteTestSuite(t *testing.T) {
 	suite.Run(t, new(HealthzRouteTestSuite))
 }
 
-func (s *HealthzRouteTestSuite) SetupSuite() {
+func (s *HealthzRouteTestSuite) SetupTest() {
 	s.StartPostgresContainer()
 }
 
-func (s *HealthzRouteTestSuite) SetupTest() {
+func (s *HealthzRouteTestSuite) TearDownTest() {
 	s.RestorePostgresContainer()
-}
-
-func (s *HealthzRouteTestSuite) TearDownSuite() {
-	s.TerminateTestPostgres()
 }
 
 func (s *HealthzRouteTestSuite) TestHealthCheckRoute() {
@@ -73,7 +69,7 @@ func (s *HealthzRouteTestSuite) TestHealthCheckRouteServeHTTPV2() {
 	router := s.DefaultWebRouter(s.T(), s.WithRoute(healthzRoute))
 
 	// Simulate a database connection error
-	s.TerminateTestPostgres()
+	s.StopPostgresContainer()
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(healthzRoute.Method(), healthzRoute.Path(), nil)

@@ -63,7 +63,7 @@ jobs:
       - name: Run golangci-linter
         uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd
         with:
-          version: v2.1.1
+          version: v2.1.5
           problem-matchers: true
           working-directory: ${{ matrix.dir }}/${{ matrix.module }}
           args: --output.sarif.path ${{ matrix.module }}/report.sarif
@@ -88,7 +88,13 @@ jobs:
       - name: Unit test
         working-directory: backend/testing
         run: |
-          go test \
+          # Use "-p 1" to disable parallel execution
+          # For details, refer to: https://github.com/stretchr/testify/issues/52#issuecomment-1112149253
+
+          go tool gotestsum \
+            --junitfile junit.xml \
+            -- \
+            -p 1 \
             -cover \
             -covermode=atomic \
             -coverprofile="coverage.txt" \
@@ -96,7 +102,13 @@ jobs:
             -race \
             ./...
       - name: Upload coverage reports to Codecov
+        if: ${{ !cancelled() }}
         uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@f2dba722c67b86c6caa034178c6e4d35335f6706
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
