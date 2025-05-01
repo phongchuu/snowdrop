@@ -15,7 +15,7 @@ func NewRecovererMiddleware(
 ) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			defer func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
 				rvr := recover()
 
 				if rvr == nil {
@@ -40,7 +40,7 @@ func NewRecovererMiddleware(
 						Status(http.StatusInternalServerError).
 						JSON()
 				}
-			}(w, r)
+			}()
 
 			next.ServeHTTP(w, r)
 		}
