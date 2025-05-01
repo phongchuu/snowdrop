@@ -18,6 +18,17 @@ components:
           example: 201
           readOnly: true
 
+    HTTPUnauthorizedCode:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: integer
+          description: HTTP status code
+          enum: [401]
+          readOnly: true
+
     Response:
       type: object
       required:
@@ -150,6 +161,65 @@ paths:
                 allOf:
                   - $ref: "#/components/schemas/Response"
                   - $ref: "#/components/schemas/HTTPCreatedCode"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required:
+                          - id
+                          - username
+                          - email
+                          - createdAt
+                          - createdBy
+                          - updatedAt
+                          - updatedBy
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            readOnly: true
+                          username:
+                            type: string
+                            example: tester
+                            readOnly: true
+                          email:
+                            type: string
+                            format: email
+                            example: tester@example.com
+                            readOnly: true
+                          createdAt:
+                            type: string
+                            format: date-time
+                            readOnly: true
+                          createdBy:
+                            type: string
+                            example: system
+                            readOnly: true
+                          updatedAt:
+                            type: [string, "null"]
+                            format: date-time
+                            readOnly: true
+                          updatedBy:
+                            type: [string, "null"]
+                            readOnly: true
+
+  /auth/profile:
+    get:
+      description: Get logged-in user information
+      responses:
+        "401":
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Response"
+                  - $ref: "#/components/schemas/HTTPUnauthorizedCode"
+        "200":
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Response"
                   - type: object
                     properties:
                       data:

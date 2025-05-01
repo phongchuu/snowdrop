@@ -12,14 +12,13 @@ import (
 	"internal.snowdrop/common/features/usermgt"
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/response"
-	"internal.snowdrop/framework/session"
 	"internal.snowdrop/framework/web"
 )
 
 type LoginRoute struct {
 	validator      *validator.Validate
 	userService    usermgt.UserService
-	sessionManager *session.Manager
+	sessionManager snowdrop.SessionManager
 	logger         *slog.Logger
 	tracer         trace.Tracer
 }
@@ -28,7 +27,7 @@ type LoginRouteParams struct {
 	fx.In
 	Validator      *validator.Validate
 	UserService    usermgt.UserService
-	SessionManager *session.Manager
+	SessionManager snowdrop.SessionManager
 	Logger         *slog.Logger
 	Tracer         trace.Tracer
 }
@@ -96,7 +95,9 @@ func (loginRoute LoginRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	userDTO, err := loginRoute.userService.Login(r.Context(), formData.Username, formData.Password)
 	if err != nil {
-		responseBuilder.Status(http.StatusBadRequest)
+		responseBuilder.Status(http.StatusUnauthorized).
+			Message("LoginRoute.InvalidCredentials").
+			JSON()
 
 		return
 	}

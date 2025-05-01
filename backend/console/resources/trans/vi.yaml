@@ -13,3 +13,7 @@
 "502": Máy chủ nhận được phản hồi không hợp lệ từ máy chủ khác.
 "503": Dịch vụ hiện không khả dụng, vui lòng thử lại sau.
 "504": Máy chủ không nhận được phản hồi từ máy chủ khác kịp thời.
+
+### features/Auth
+Auth:
+  InvalidCredentials: Sai tên đăng nhập hoặc mật khẩu.

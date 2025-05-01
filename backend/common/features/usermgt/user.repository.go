@@ -3,30 +3,42 @@ package usermgt
 import (
 	"context"
 	"database/sql"
+	"reflect"
 
 	"github.com/georgysavva/scany/v2/sqlscan"
+	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 	"internal.snowdrop/common/store"
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/database"
+	"internal.snowdrop/framework/opentelemetry"
 	"internal.snowdrop/framework/uuidext"
 )
 
 type UserRepositoryImpl struct {
-	txMgr snowdrop.TransactionManager
+	structName string
+	txMgr      snowdrop.TransactionManager
+	tracer     trace.Tracer
 }
 
 type UserRepositoryParams struct {
 	fx.In
 	TransactionManager snowdrop.TransactionManager
+	Tracer             trace.Tracer
 }
 
 var _ UserRepository = (*UserRepositoryImpl)(nil)
 
 func NewUserRepository(p UserRepositoryParams) UserRepositoryImpl {
-	return UserRepositoryImpl{
-		txMgr: p.TransactionManager,
-	}
+	userRepositoryImpl := UserRepositoryImpl{}
+	userRepositoryImpl.structName = reflect.TypeOf(userRepositoryImpl).Name()
+	userRepositoryImpl.txMgr = p.TransactionManager
+	userRepositoryImpl.tracer = p.Tracer
+
+	return userRepositoryImpl
 }
 
 // CreateUser implements UserRepository.
@@ -61,6 +73,45 @@ func (u UserRepositoryImpl) CreateUser(
 			}
 
 			return &model, nil
+		},
+	)
+}
+
+func (u UserRepositoryImpl) GetUserByID(
+	ctx context.Context,
+	id uuid.UUID,
+) (*store.UserModel, error) {
+	spanCtx, span := u.tracer.Start(
+		ctx,
+		opentelemetry.BuildSpanName(u.structName, "GetUserByID"),
+		trace.WithAttributes(attribute.Stringer("args[1].id", id)),
+	)
+	defer span.End(trace.WithStackTrace(true))
+
+	return database.RunTxWithData(
+		spanCtx,
+		u.txMgr,
+		func(ctx context.Context, tx *sql.Tx) (*store.UserModel, error) {
+			var userModel store.UserModel
+
+			err := sqlscan.Get(
+				ctx,
+				tx,
+				&userModel,
+				`SELECT id, username, email, created_at, created_by, updated_at, updated_by
+                FROM public.users WHERE id = $1`,
+				id,
+			)
+			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
+
+				return nil, err
+			}
+
+			span.SetStatus(codes.Ok, "")
+
+			return &userModel, nil
 		},
 	)
 }

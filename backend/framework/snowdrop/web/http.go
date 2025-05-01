@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net"
 	"net/http"
 	"slices"
@@ -20,7 +21,6 @@ import (
 	"go.uber.org/fx"
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/log"
-	"internal.snowdrop/framework/session"
 	snowdropMiddleware "internal.snowdrop/framework/web/middleware"
 )
 
@@ -30,7 +30,7 @@ type RouteParams struct {
 	Logger                     *slog.Logger
 	I18nBundle                 *i18n.Bundle
 	HTTPRoutes                 []snowdrop.HTTPHandler `group:"http_routes"`
-	SessionManager             *session.Manager
+	SessionManager             snowdrop.SessionManager
 	Tracer                     otelTrace.Tracer
 	UniversalTranslator        *ut.UniversalTranslator
 	GetPreferredUserLanguageFn snowdrop.GetPreferredUserLanguageFn
@@ -48,23 +48,31 @@ func HTTPRoute(handlerFn any) any {
 	)
 }
 
-func defaultMiddlewares(params RouteParams) map[int]func(http.Handler) http.Handler {
+func defaultMiddlewares(p RouteParams) map[int]func(http.Handler) http.Handler {
 	return map[int]func(http.Handler) http.Handler{
-		0: snowdropMiddleware.NewTraceMiddleware(),
-		1: chiMiddleware.CleanPath,
-		2: chiMiddleware.Compress(5),
-		3: snowdropMiddleware.NewRequestSizeMiddleware(params.Config.GetMaxRequestSize()),
-		60: snowdropMiddleware.NewI18nMiddleware(
-			params.I18nBundle,
-			params.GetPreferredUserLanguageFn,
+		0:  snowdropMiddleware.NewTraceMiddleware(p.Tracer),
+		10: chiMiddleware.CleanPath,
+		20: chiMiddleware.Compress(5),
+		30: snowdropMiddleware.NewRequestSizeMiddleware(p.Config.GetMaxRequestSize()),
+		40: snowdropMiddleware.NewI18nMiddleware(
+			p.I18nBundle,
+			p.GetPreferredUserLanguageFn,
 		),
-		61: snowdropMiddleware.NewRecovererMiddleware(params.Logger),
-		80: snowdropMiddleware.NewUniversalTranslatorMiddleware(
-			params.UniversalTranslator,
-			params.GetPreferredUserLanguageFn,
+		50: snowdropMiddleware.NewUniversalTranslatorMiddleware(
+			p.UniversalTranslator,
+			p.GetPreferredUserLanguageFn,
 		),
-		100: params.SessionManager.Middleware,
-		120: chiMiddleware.Timeout(3 * time.Minute),
+		60: snowdropMiddleware.NewRecovererMiddleware(p.Logger),
+		70: chiMiddleware.Timeout(3 * time.Minute),
+		80: snowdropMiddleware.NewSessionMiddleware(
+			p.SessionManager,
+			[]string{
+				"GET /api/openapi",
+				"GET /healthz",
+				"GET /favicon.ico",
+				"GET /public/*",
+			},
+		),
 	}
 }
 
@@ -75,33 +83,37 @@ func registerRoutes(r chi.Router, routes []snowdrop.HTTPHandler) {
 	}
 }
 
+func useDefaultMiddlewares(r chi.Router, p RouteParams) {
+	middlewares := defaultMiddlewares(p)
+	middlewarePriorities := slices.Sorted(maps.Keys(middlewares))
+
+	for _, priority := range middlewarePriorities {
+		r.Use(middlewares[priority])
+	}
+}
+
 // NewRouter initializes and returns a new HTTP router instance.
 func NewRouter(params RouteParams) *chi.Mux {
 	r := chi.NewRouter()
 
-	publicRoutes := []snowdrop.HTTPHandler{}
-	privateRoutes := []snowdrop.HTTPHandler{}
+	routesByTag := map[snowdrop.RouteTag][]snowdrop.HTTPHandler{
+		PublicRoute:  {},
+		PrivateRoute: {},
+	}
 
 	for _, route := range params.HTTPRoutes {
 		for _, tag := range lo.FindUniques(route.Tags()) {
-			switch tag {
-			case PublicRoute:
-				publicRoutes = append(publicRoutes, route)
-			case PrivateRoute:
-				privateRoutes = append(privateRoutes, route)
-			default:
+			if _, exists := routesByTag[tag]; exists {
+				routesByTag[tag] = append(routesByTag[tag], route)
+			} else {
 				params.Logger.Error(fmt.Sprintf(`the tag "%v" is not supported`, tag))
 			}
 		}
 	}
 
-	middlewares := defaultMiddlewares(params)
-
 	// Default routes
 	r.Group(func(r chi.Router) {
-		middlewarePriorities := lo.Keys(middlewares)
-		slices.Sort(middlewarePriorities)
-		r.Use(lo.Values(middlewares)...)
+		useDefaultMiddlewares(r, params)
 
 		if params.NotFoundHandler != nil {
 			r.NotFound(http.HandlerFunc(params.NotFoundHandler))
@@ -114,18 +126,15 @@ func NewRouter(params RouteParams) *chi.Mux {
 
 	// Public routes
 	r.Group(func(r chi.Router) {
-		middlewarePriorities := lo.Keys(middlewares)
-		slices.Sort(middlewarePriorities)
-		r.Use(lo.Values(middlewares)...)
-		registerRoutes(r, publicRoutes)
+		useDefaultMiddlewares(r, params)
+		registerRoutes(r, routesByTag[PublicRoute])
 	})
 
 	// Private routes
 	r.Group(func(r chi.Router) {
-		middlewarePriorities := lo.Keys(middlewares)
-		slices.Sort(middlewarePriorities)
-		r.Use(lo.Values(middlewares)...)
-		registerRoutes(r, privateRoutes)
+		useDefaultMiddlewares(r, params)
+		r.Use(snowdropMiddleware.NewAuthMiddleware())
+		registerRoutes(r, routesByTag[PrivateRoute])
 	})
 
 	_ = chi.Walk(

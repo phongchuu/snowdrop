@@ -7,6 +7,7 @@ package mockusermgt
 import (
 	"context"
 
+	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 	"internal.snowdrop/common/features/usermgt"
 	"internal.snowdrop/common/store"
@@ -92,6 +93,63 @@ func (_c *MockUserRepository_CreateUser_Call) Return(userModel *store.UserModel,
 }
 
 func (_c *MockUserRepository_CreateUser_Call) RunAndReturn(run func(ctx context.Context, params usermgt.UserSetter) (*store.UserModel, error)) *MockUserRepository_CreateUser_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetUserByID provides a mock function for the type MockUserRepository
+func (_mock *MockUserRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*store.UserModel, error) {
+	ret := _mock.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserByID")
+	}
+
+	var r0 *store.UserModel
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*store.UserModel, error)); ok {
+		return returnFunc(ctx, id)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) *store.UserModel); ok {
+		r0 = returnFunc(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*store.UserModel)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockUserRepository_GetUserByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserByID'
+type MockUserRepository_GetUserByID_Call struct {
+	*mock.Call
+}
+
+// GetUserByID is a helper method to define mock.On call
+//   - ctx
+//   - id
+func (_e *MockUserRepository_Expecter) GetUserByID(ctx interface{}, id interface{}) *MockUserRepository_GetUserByID_Call {
+	return &MockUserRepository_GetUserByID_Call{Call: _e.mock.On("GetUserByID", ctx, id)}
+}
+
+func (_c *MockUserRepository_GetUserByID_Call) Run(run func(ctx context.Context, id uuid.UUID)) *MockUserRepository_GetUserByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *MockUserRepository_GetUserByID_Call) Return(userModel *store.UserModel, err error) *MockUserRepository_GetUserByID_Call {
+	_c.Call.Return(userModel, err)
+	return _c
+}
+
+func (_c *MockUserRepository_GetUserByID_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (*store.UserModel, error)) *MockUserRepository_GetUserByID_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -233,6 +291,63 @@ func (_c *MockUserService_CreateUser_Call) Return(userDTO *usermgt.UserDTO, err 
 }
 
 func (_c *MockUserService_CreateUser_Call) RunAndReturn(run func(ctx context.Context, createUserDTO usermgt.CreateUserDTO) (*usermgt.UserDTO, error)) *MockUserService_CreateUser_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetUserByID provides a mock function for the type MockUserService
+func (_mock *MockUserService) GetUserByID(ctx context.Context, id uuid.UUID) (*usermgt.UserDTO, error) {
+	ret := _mock.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserByID")
+	}
+
+	var r0 *usermgt.UserDTO
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*usermgt.UserDTO, error)); ok {
+		return returnFunc(ctx, id)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) *usermgt.UserDTO); ok {
+		r0 = returnFunc(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*usermgt.UserDTO)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockUserService_GetUserByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserByID'
+type MockUserService_GetUserByID_Call struct {
+	*mock.Call
+}
+
+// GetUserByID is a helper method to define mock.On call
+//   - ctx
+//   - id
+func (_e *MockUserService_Expecter) GetUserByID(ctx interface{}, id interface{}) *MockUserService_GetUserByID_Call {
+	return &MockUserService_GetUserByID_Call{Call: _e.mock.On("GetUserByID", ctx, id)}
+}
+
+func (_c *MockUserService_GetUserByID_Call) Run(run func(ctx context.Context, id uuid.UUID)) *MockUserService_GetUserByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *MockUserService_GetUserByID_Call) Return(userDTO *usermgt.UserDTO, err error) *MockUserService_GetUserByID_Call {
+	_c.Call.Return(userDTO, err)
+	return _c
+}
+
+func (_c *MockUserService_GetUserByID_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (*usermgt.UserDTO, error)) *MockUserService_GetUserByID_Call {
 	_c.Call.Return(run)
 	return _c
 }
