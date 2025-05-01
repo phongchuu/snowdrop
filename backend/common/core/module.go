@@ -21,6 +21,8 @@ func NewModule(fwCfg ModuleConfig) fx.Option {
 				return NewAppConfig(fwCfg)
 			}, fx.As(new(snowdrop.ConfigManager))),
 			NewGetPreferredUserLanguageFn,
+			NewNotFoundHandler,
+			NewMethodNotAllowedHandler,
 		),
 	)
 }

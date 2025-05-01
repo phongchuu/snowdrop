@@ -34,6 +34,8 @@ type RouteParams struct {
 	Tracer                     otelTrace.Tracer
 	UniversalTranslator        *ut.UniversalTranslator
 	GetPreferredUserLanguageFn snowdrop.GetPreferredUserLanguageFn
+	NotFoundHandler            NotFoundHandler         `optional:"true"`
+	MethodNotAllowedHandler    MethodNotAllowedHandler `optional:"true"`
 }
 
 // HTTPRoute annotates a function as an HTTP handler for Fx DI.
@@ -46,22 +48,8 @@ func HTTPRoute(handlerFn any) any {
 	)
 }
 
-// NewRouter initializes and returns a new HTTP router instance.
-func NewRouter(params RouteParams) *chi.Mux {
-	r := chi.NewRouter()
-
-	publicRoutes := []snowdrop.HTTPHandler{}
-	privateRoutes := []snowdrop.HTTPHandler{}
-
-	for _, route := range params.HTTPRoutes {
-		if slices.Contains(route.Tags(), PrivateRoute) {
-			privateRoutes = append(privateRoutes, route)
-		} else {
-			publicRoutes = append(publicRoutes, route)
-		}
-	}
-
-	middlewares := map[int]func(http.Handler) http.Handler{
+func defaultMiddlewares(params RouteParams) map[int]func(http.Handler) http.Handler {
+	return map[int]func(http.Handler) http.Handler{
 		0: snowdropMiddleware.NewTraceMiddleware(),
 		1: chiMiddleware.CleanPath,
 		2: chiMiddleware.Compress(5),
@@ -78,17 +66,58 @@ func NewRouter(params RouteParams) *chi.Mux {
 		100: params.SessionManager.Middleware,
 		120: chiMiddleware.Timeout(3 * time.Minute),
 	}
+}
+
+func registerRoutes(r chi.Router, routes []snowdrop.HTTPHandler) {
+	for _, route := range routes {
+		routeTag := fmt.Sprintf("%s %s", route.Method(), route.Path())
+		r.Method(route.Method(), route.Path(), otelhttp.WithRouteTag(routeTag, route))
+	}
+}
+
+// NewRouter initializes and returns a new HTTP router instance.
+func NewRouter(params RouteParams) *chi.Mux {
+	r := chi.NewRouter()
+
+	publicRoutes := []snowdrop.HTTPHandler{}
+	privateRoutes := []snowdrop.HTTPHandler{}
+
+	for _, route := range params.HTTPRoutes {
+		for _, tag := range lo.FindUniques(route.Tags()) {
+			switch tag {
+			case PublicRoute:
+				publicRoutes = append(publicRoutes, route)
+			case PrivateRoute:
+				privateRoutes = append(privateRoutes, route)
+			default:
+				params.Logger.Error(fmt.Sprintf(`the tag "%v" is not supported`, tag))
+			}
+		}
+	}
+
+	middlewares := defaultMiddlewares(params)
+
+	// Default routes
+	r.Group(func(r chi.Router) {
+		middlewarePriorities := lo.Keys(middlewares)
+		slices.Sort(middlewarePriorities)
+		r.Use(lo.Values(middlewares)...)
+
+		if params.NotFoundHandler != nil {
+			r.NotFound(http.HandlerFunc(params.NotFoundHandler))
+		}
+
+		if params.MethodNotAllowedHandler != nil {
+			r.MethodNotAllowed(http.HandlerFunc(params.MethodNotAllowedHandler))
+		}
+	})
 
 	// Public routes
 	r.Group(func(r chi.Router) {
 		middlewarePriorities := lo.Keys(middlewares)
 		slices.Sort(middlewarePriorities)
 		r.Use(lo.Values(middlewares)...)
-
-		for _, route := range publicRoutes {
-			routeTag := fmt.Sprintf("%s %s", route.Method(), route.Path())
-			r.Method(route.Method(), route.Path(), otelhttp.WithRouteTag(routeTag, route))
-		}
+		registerRoutes(r, publicRoutes)
 	})
 
 	// Private routes
@@ -96,12 +125,17 @@ func NewRouter(params RouteParams) *chi.Mux {
 		middlewarePriorities := lo.Keys(middlewares)
 		slices.Sort(middlewarePriorities)
 		r.Use(lo.Values(middlewares)...)
-
-		for _, route := range privateRoutes {
-			routeTag := fmt.Sprintf("%s %s", route.Method(), route.Path())
-			r.Method(route.Method(), route.Path(), otelhttp.WithRouteTag(routeTag, route))
-		}
+		registerRoutes(r, privateRoutes)
 	})
+
+	_ = chi.Walk(
+		r,
+		func(method string, route string, _ http.Handler, _ ...func(http.Handler) http.Handler) error {
+			params.Logger.Info(fmt.Sprintf("Registered route: [%s] %s", method, route))
+
+			return nil
+		},
+	)
 
 	return r
 }

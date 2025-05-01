@@ -6,6 +6,7 @@
 "401": Vui lòng xác thực để thực hiện yêu cầu này.
 "403": Bạn không có quyền truy cập tài nguyên này.
 "404": Không tìm thấy tài nguyên được yêu cầu trên máy chủ.
+"405": Phương thức yêu cầu không được phép đối với tài nguyên này. Vui lòng kiểm tra các phương thức được hỗ trợ và thử lại.
 "408": Máy chủ đã hết thời gian chờ, vui lòng thử lại.
 "500": Đã xảy ra lỗi nội bộ trên máy chủ, vui lòng thử lại sau.
 "501": Máy chủ chưa hỗ trợ thực hiện yêu cầu này.

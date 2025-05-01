@@ -257,6 +257,10 @@ formatters:
           replacement: any
         - pattern: a[b:len(a)]
           replacement: a[b:]
+    golines:
+      # Same with revive.line-length-limit
+      max-len: 120
+      reformat-tags: false
   exclusions:
     generated: lax
     paths:
