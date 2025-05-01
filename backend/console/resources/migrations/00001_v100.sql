@@ -68,13 +68,26 @@ FOR EACH ROW
 EXECUTE FUNCTION audit_user_trigger();
 --
 INSERT INTO public.users (id, username, email, password)
-VALUES (
-  '00000000-0000-7000-8000-000000000000',
+VALUES
+(
+  '00000000-03e8-7000-8000-29d1c630b42e',
+  'system',
+  'system@internal.com',
+-- +goose ENVSUB ON
+  crypt('${APP_DEFAULT_SYSTEM_PASSWORD?Missing env: APP_DEFAULT_SYSTEM_PASSWORD}', gen_salt('bf', 12))
+-- +goose ENVSUB OFF
+),
+(
+  '00000000-07d0-7000-8000-8fbd4b99a4c9',
   'admin',
   'admin@internal.com',
--- +goose ENVSUB ON
-  crypt('${APP_DEFAULT_ADMIN_PASSWORD?Missing env: APP_DEFAULT_ADMIN_PASSWORD}', gen_salt('bf', 12))
--- +goose ENVSUB OFF
+  crypt(encode(gen_random_bytes(72), 'base64'), gen_salt('bf', 12))
+),
+(
+  '00000000-0bb8-7000-8000-3e1b6bb7b5e4',
+  'anonymous',
+  'anonymous@internal.com',
+  crypt(encode(gen_random_bytes(72), 'base64'), gen_salt('bf', 12))
 );
 -- [END] Table: public.users
 
@@ -83,7 +96,7 @@ VALUES (
 CREATE TABLE public.sessions (
   id VARCHAR(255) PRIMARY KEY,
   user_id UUID NULL,
-  data JSONB NOT NULL DEFAULT '{}'::JSONB,
+  data JSONB,
   created_at TIMESTAMPTZ NOT NULL,
   last_accessed_at TIMESTAMPTZ NOT NULL,
   expires_at TIMESTAMPTZ NOT NULL,
@@ -91,7 +104,7 @@ CREATE TABLE public.sessions (
   CONSTRAINT chk_last_accessed_after_created CHECK (last_accessed_at >= created_at)
 );
 --
-COMMENT ON COLUMN public.sessions.user_id IS 'NULL for guest session';
+COMMENT ON COLUMN public.sessions.user_id IS 'NULL for annonymous session';
 --
 CREATE INDEX idx_sessions_user_id ON sessions (user_id) WHERE user_id IS NOT NULL;
 --

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	snowdrop "internal.snowdrop/framework"
@@ -49,14 +50,37 @@ func (TransactionManagerImpl) GetCurrentTx(ctx context.Context) *sql.Tx {
 }
 
 func (TransactionManagerImpl) configureTransaction(ctx context.Context, tx *sql.Tx) error {
-	_, err := tx.ExecContext(
-		ctx,
-		`SELECT set_config('session.requester', $1, true)
-        WHERE current_setting('session.requester', true) IS DISTINCT FROM $1;`,
-		//nolint:godox // This is a placeholder representing the requester, to be updated in the future
-		// TODO: Get the requester from the context
-		"system",
-	)
+	currentSession, err := snowdrop.GetCurrentSessionFromCtx(ctx)
+	if err != nil || errors.Is(err, snowdrop.ErrNoSession) {
+		_, err = tx.ExecContext(
+			ctx,
+			`SELECT set_config('session.requester', u.id::VARCHAR(255), true)
+            FROM public.users u
+            WHERE u.username = $1;`,
+			"system",
+		)
+	}
+
+	if currentSession != nil {
+		if !currentSession.UserID.Valid {
+			_, err = tx.ExecContext(
+				ctx,
+				`SELECT set_config('session.requester', u.id::VARCHAR(255), true)
+                FROM public.users u
+                WHERE u.username = $1;`,
+				"annonymous",
+			)
+		}
+
+		if currentSession.UserID.Valid {
+			_, err = tx.ExecContext(
+				ctx,
+				`SELECT set_config('session.requester', $1, true);`,
+				currentSession.UserID.UUID.String(),
+			)
+		}
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to set session.requester: %w", err)
 	}

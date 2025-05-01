@@ -4,35 +4,52 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
+	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/georgysavva/scany/v2/sqlscan"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/database"
+	"internal.snowdrop/framework/opentelemetry"
 )
 
 // PostgresRepository implements Repository for PostgreSQL.
 type PostgresRepository struct {
-	txMgr snowdrop.TransactionManager
+	structName string
+	txMgr      snowdrop.TransactionManager
+	tracer     trace.Tracer
 }
 
 var _ snowdrop.SessionRepository = (*PostgresRepository)(nil)
 
-func NewPostgresRepository(transactionManager snowdrop.TransactionManager) *PostgresRepository {
-	return &PostgresRepository{
-		txMgr: transactionManager,
-	}
+func NewPostgresRepository(transactionManager snowdrop.TransactionManager, tracer trace.Tracer) *PostgresRepository {
+	repository := PostgresRepository{}
+	repository.structName = reflect.TypeOf(repository).Name()
+	repository.txMgr = transactionManager
+	repository.tracer = tracer
+
+	return &repository
 }
 
 func (r *PostgresRepository) GetSession(
 	ctx context.Context,
 	sessionID string,
 ) (*snowdrop.SessionModel, error) {
-	return database.RunTxWithData(
+	spanCtx, span := r.tracer.Start(
 		ctx,
+		opentelemetry.BuildSpanName(r.structName, "GetSession"),
+		trace.WithAttributes(attribute.String("args[1].sessionID", sessionID)),
+	)
+	defer span.End()
+
+	return database.RunTxWithData(
+		spanCtx,
 		r.txMgr,
 		func(ctx context.Context, tx *sql.Tx) (*snowdrop.SessionModel, error) {
 			var session snowdrop.SessionModel
@@ -48,10 +65,6 @@ func (r *PostgresRepository) GetSession(
 				sessionID,
 			)
 			if err != nil {
-				if errors.Is(err, sql.ErrNoRows) {
-					return nil, nil
-				}
-
 				return nil, err
 			}
 
@@ -66,7 +79,18 @@ func (r *PostgresRepository) UpdateSession(
 	lastAccessedAt time.Time,
 	expiresAt time.Time,
 ) error {
-	return database.RunTx(ctx, r.txMgr, func(ctx context.Context, tx *sql.Tx) error {
+	spanCtx, span := r.tracer.Start(
+		ctx,
+		opentelemetry.BuildSpanName(r.structName, "UpdateSession"),
+		trace.WithAttributes(
+			attribute.String("args[1].sessionID", sessionID),
+			attribute.Stringer("args[2].lastAccessedAt", lastAccessedAt),
+			attribute.Stringer("args[3].expiresAt", expiresAt),
+		),
+	)
+	defer span.End()
+
+	return database.RunTx(spanCtx, r.txMgr, func(ctx context.Context, tx *sql.Tx) error {
 		_, err := tx.ExecContext(
 			ctx,
 			`UPDATE sessions SET last_accessed_at = $1, expires_at = $2 WHERE id = $3`,
@@ -74,16 +98,36 @@ func (r *PostgresRepository) UpdateSession(
 			expiresAt,
 			sessionID,
 		)
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 
-		return err
+			return err
+		}
+
+		span.SetStatus(codes.Ok, "")
+
+		return nil
 	})
 }
 
 func (r *PostgresRepository) CreateSession(
 	ctx context.Context,
 	userID uuid.UUID,
+	data map[string]any,
 	expiresAt time.Time,
 ) (*snowdrop.SessionModel, error) {
+	spanCtx, span := r.tracer.Start(
+		ctx,
+		opentelemetry.BuildSpanName(r.structName, "CreateSession"),
+		trace.WithAttributes(
+			attribute.Stringer("args[1].userID", userID),
+			attribute.String("args[2].data", fmt.Sprintf("%v", data)),
+			attribute.Stringer("args[3].expiresAt", expiresAt),
+		),
+	)
+	defer span.End()
+
 	sessionID, err := generateSessionID()
 	if err != nil {
 		return nil, err
@@ -92,19 +136,24 @@ func (r *PostgresRepository) CreateSession(
 	now := time.Now()
 
 	return database.RunTxWithData(
-		ctx,
+		spanCtx,
 		r.txMgr,
 		func(ctx context.Context, tx *sql.Tx) (*snowdrop.SessionModel, error) {
-			model := snowdrop.SessionModel{
-				ID: sessionID,
-				UserID: uuid.NullUUID{
-					UUID:  lo.Ternary(userID == uuid.Nil, uuid.Nil, userID),
-					Valid: userID != uuid.Nil,
-				},
-				CreatedAt:      now,
-				LastAccessedAt: now,
-				ExpiresAt:      expiresAt,
-				Data:           json.RawMessage{},
+			var model snowdrop.SessionModel
+
+			var serializedData *[]byte
+
+			if len(data) > 0 {
+				dataAsBytes, marshalErr := json.Marshal(data)
+				if marshalErr != nil {
+					return nil, marshalErr
+				}
+
+				serializedData = &dataAsBytes
+			}
+
+			if err != nil {
+				return nil, err
 			}
 
 			if err := sqlscan.Get(
@@ -112,13 +161,17 @@ func (r *PostgresRepository) CreateSession(
 				tx,
 				&model,
 				`INSERT INTO sessions (id, user_id, created_at, last_accessed_at, expires_at, data)
-		    VALUES ($1, $2, $3, $4, $5, '{}'::jsonb)
-            RETURNING *`,
-				model.ID,
-				model.UserID,
-				model.CreatedAt,
-				model.LastAccessedAt,
-				model.ExpiresAt,
+			    VALUES ($1, $2, $3, $4, $5, $6)
+			    RETURNING *`,
+				sessionID,
+				uuid.NullUUID{
+					UUID:  lo.Ternary(userID == uuid.Nil, uuid.Nil, userID),
+					Valid: userID != uuid.Nil,
+				},
+				now,
+				now,
+				expiresAt,
+				serializedData,
 			); err != nil {
 				return nil, err
 			}

@@ -14,9 +14,15 @@ func NewUniversalTranslatorMiddleware(
 ) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			language := getPreferredUserLanguageFn(r)
+			tracer := snowdrop.MustGetTracer(r)
+
+			spanCtx, span := tracer.Start(r.Context(), "UniversalTranslatorMiddleware")
+			defer span.End()
+
+			req := r.WithContext(spanCtx)
+			language := getPreferredUserLanguageFn(req)
 			translator, _ := universalTranslator.GetTranslator(language.String())
-			next.ServeHTTP(w, validation.WithUniversalTranslator(r, translator))
+			next.ServeHTTP(w, validation.WithUniversalTranslator(req, translator))
 		})
 	}
 }

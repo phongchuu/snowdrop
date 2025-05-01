@@ -68,7 +68,10 @@ func SetupOtelSDK(p SetupOtelSDKParams) (SetupOtelSDKResult, error) {
 		return SetupOtelSDKResult{}, err
 	}
 
-	tracer := tracerProvider.Tracer(schemaName)
+	tracer := tracerProvider.Tracer(
+		schemaName,
+		otelTrace.WithInstrumentationVersion(p.Config.GetAppVersion()),
+	)
 
 	metricProvider, err := newMetricProvider(p.Lifecycle, resource)
 	if err != nil {

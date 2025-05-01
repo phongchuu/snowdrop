@@ -8,7 +8,10 @@ import (
 func NewModule() fx.Option {
 	return fx.Module(
 		"AuthModule",
-		fx.Provide(web.HTTPRoute(NewRegisterRoute)),
-		fx.Provide(web.HTTPRoute(NewLoginRoute)),
+		fx.Provide(
+			web.HTTPRoute(NewRegisterRoute),
+			web.HTTPRoute(NewLoginRoute),
+			web.HTTPRoute(NewProfileRoute),
+		),
 	)
 }

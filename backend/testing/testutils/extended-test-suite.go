@@ -36,7 +36,7 @@ type TestContainer struct {
 	UniversalTranslator        *ut.UniversalTranslator
 	NoopTracer                 trace.Tracer
 	TransactionManager         snowdrop.TransactionManager
-	SessionManager             *session.Manager
+	SessionManager             snowdrop.SessionManager
 	MockUserService            *mockusermgt.MockUserService
 	GetPreferredUserLanguageFn snowdrop.GetPreferredUserLanguageFn
 	DB                         *sql.DB
@@ -62,7 +62,7 @@ func (s *ExtendedTestSuite) StartPostgresContainer() {
 
 	pgContainer, err := postgres.Run(
 		ctx,
-		"postgres:17-alpine",
+		"postgres:17.4-alpine3.21",
 		postgres.WithDatabase("snowdrop"),
 		postgres.WithUsername("tester"),
 		postgres.WithPassword("Keep!t5ecret"),
@@ -101,7 +101,7 @@ func (s *ExtendedTestSuite) SetupTestDependencyContainer() TestContainer {
 	s.T().Helper()
 
 	// This is used for database migration
-	s.T().Setenv("APP_DEFAULT_ADMIN_PASSWORD", "Keep!t5ecret")
+	s.T().Setenv("APP_DEFAULT_SYSTEM_PASSWORD", "Keep!t5ecret")
 
 	fxLifecycle := fxtest.NewLifecycle(s.T())
 	noopLogger := log.NewNoopLogger()
@@ -146,7 +146,8 @@ func (s *ExtendedTestSuite) SetupTestDependencyContainer() TestContainer {
 	// SessionManager
 	sessionManager := session.NewManager(session.ManagerParams{
 		TransactionManager: transactionManager,
-		Repository:         session.NewPostgresRepository(transactionManager),
+		Tracer:             noop.NewTracerProvider().Tracer("noop"),
+		Repository:         session.NewPostgresRepository(transactionManager, noop.NewTracerProvider().Tracer("noop")),
 	})
 
 	return TestContainer{

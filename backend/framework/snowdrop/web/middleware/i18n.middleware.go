@@ -16,9 +16,15 @@ func NewI18nMiddleware(
 ) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			language := getPreferredUserLanguageFn(r)
+			tracer := snowdrop.MustGetTracer(r)
+
+			spanCtx, span := tracer.Start(r.Context(), "I18nMiddleware")
+			defer span.End()
+
+			req := r.WithContext(spanCtx)
+			language := getPreferredUserLanguageFn(req)
 			localizer := i18n.NewLocalizer(bundle, language.String())
-			next.ServeHTTP(w, translation.WithLocalizer(r, localizer))
+			next.ServeHTTP(w, translation.WithLocalizer(req, localizer))
 		})
 	}
 }

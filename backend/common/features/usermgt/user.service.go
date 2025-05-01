@@ -2,11 +2,15 @@ package usermgt
 
 import (
 	"context"
+	"reflect"
 
+	"github.com/google/uuid"
 	"github.com/samber/lo"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/bcrypt"
+	"internal.snowdrop/framework/opentelemetry"
 )
 
 type CreateUserDTO struct {
@@ -16,6 +20,7 @@ type CreateUserDTO struct {
 }
 
 type UserServiceImpl struct {
+	structName     string
 	userRepository UserRepository
 	tracer         trace.Tracer
 }
@@ -23,10 +28,12 @@ type UserServiceImpl struct {
 var _ UserService = (*UserServiceImpl)(nil)
 
 func NewUserService(userRepository UserRepository, tracer trace.Tracer) UserServiceImpl {
-	return UserServiceImpl{
-		userRepository: userRepository,
-		tracer:         tracer,
-	}
+	userServiceImpl := UserServiceImpl{}
+	userServiceImpl.structName = reflect.TypeOf(userServiceImpl).Name()
+	userServiceImpl.userRepository = userRepository
+	userServiceImpl.tracer = tracer
+
+	return userServiceImpl
 }
 
 func (u UserServiceImpl) CreateUser(
@@ -58,16 +65,15 @@ func (u UserServiceImpl) Login(
 	username string,
 	password string,
 ) (*UserDTO, error) {
-	ctx, span := u.tracer.Start(
+	spanCtx, span := u.tracer.Start(
 		ctx,
-		"[user.service.go] Login",
-		trace.WithSpanKind(trace.SpanKindInternal),
-		trace.WithAttributes(attribute.String("username", username)),
-		trace.WithAttributes(attribute.String("password", "[redacted]")),
+		opentelemetry.BuildSpanName(u.structName, "Login"),
+		trace.WithAttributes(attribute.String("args[1].username", username)),
+		trace.WithAttributes(attribute.String("args[2].password", "[redacted]")),
 	)
 	defer span.End()
 
-	userModel, err := u.userRepository.GetUserByUsername(ctx, username)
+	userModel, err := u.userRepository.GetUserByUsername(spanCtx, username)
 	if err != nil {
 		return nil, err
 	}
@@ -77,4 +83,25 @@ func (u UserServiceImpl) Login(
 	}
 
 	return lo.ToPtr(ToUserDTO(*userModel)), nil
+}
+
+func (u UserServiceImpl) GetUserByID(ctx context.Context, id uuid.UUID) (*UserDTO, error) {
+	spanCtx, span := u.tracer.Start(
+		ctx,
+		opentelemetry.BuildSpanName(u.structName, "GetUserByID"),
+		trace.WithAttributes(attribute.Stringer("args[1].id", id)),
+	)
+	defer span.End()
+
+	model, err := u.userRepository.GetUserByID(spanCtx, id)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
+		return nil, err
+	}
+
+	span.SetStatus(codes.Ok, "")
+
+	return lo.ToPtr(ToUserDTO(*model)), nil
 }

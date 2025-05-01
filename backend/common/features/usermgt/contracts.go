@@ -3,12 +3,15 @@ package usermgt
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"internal.snowdrop/common/store"
 )
 
 type UserRepository interface {
 	// CreateUser inserts a new user record into the database.
 	CreateUser(ctx context.Context, params UserSetter) (*store.UserModel, error)
+
+	GetUserByID(ctx context.Context, id uuid.UUID) (*store.UserModel, error)
 
 	GetUserByUsername(ctx context.Context, username string) (*store.UserModel, error)
 }
@@ -27,4 +30,6 @@ type UserService interface {
 	CreateUser(ctx context.Context, createUserDTO CreateUserDTO) (*UserDTO, error)
 
 	Login(ctx context.Context, username string, password string) (*UserDTO, error)
+
+	GetUserByID(ctx context.Context, id uuid.UUID) (*UserDTO, error)
 }

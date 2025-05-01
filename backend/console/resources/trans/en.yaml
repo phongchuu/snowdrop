@@ -13,3 +13,7 @@
 "502": The server received an invalid response from another server.
 "503": The service is currently unavailable; please try again later.
 "504": The server did not receive a timely response from another server.
+
+### features/Auth
+Auth:
+  InvalidCredentials: Invalid username or password.

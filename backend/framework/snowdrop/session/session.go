@@ -5,58 +5,53 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/database"
+	"internal.snowdrop/framework/opentelemetry"
 )
-
-type ctxKey int8
-
-// Config holds session configuration.
-type Config struct {
-	InactivityTimeout time.Duration
-	MaximumTimeout    time.Duration
-	CookieName        string
-	SecureCookie      bool
-	HTTPOnlyCookie    bool
-	SameSite          http.SameSite
-}
 
 // Manager handles session operations.
 type Manager struct {
-	config        Config
+	structName    string
+	config        snowdrop.SessionConfig
 	txMgr         snowdrop.TransactionManager
 	repository    snowdrop.SessionRepository
 	cleanupTicker *time.Ticker
+	tracer        trace.Tracer
 }
 
 type ManagerParams struct {
 	fx.In
 	TransactionManager snowdrop.TransactionManager
 	Repository         snowdrop.SessionRepository
+	Tracer             trace.Tracer
 }
 
-const sessionCtxKey ctxKey = 0
+var _ snowdrop.SessionManager = (*Manager)(nil)
 
-func NewManager(p ManagerParams) *Manager {
-	m := &Manager{
-		config: Config{
-			InactivityTimeout: 7 * 24 * time.Hour,
-			MaximumTimeout:    30 * 24 * time.Hour,
-			CookieName:        "session_id",
-			SecureCookie:      false,
-			HTTPOnlyCookie:    true,
-			SameSite:          http.SameSiteLaxMode,
-		},
-		repository: p.Repository,
-		txMgr:      p.TransactionManager,
+func NewManager(p ManagerParams) Manager {
+	m := Manager{}
+	m.structName = reflect.TypeOf(m).Name()
+	m.config = snowdrop.SessionConfig{
+		InactivityTimeout: 7 * 24 * time.Hour,
+		MaximumTimeout:    30 * 24 * time.Hour,
+		CookieName:        "session_id",
+		SecureCookie:      false,
+		HTTPOnlyCookie:    true,
+		SameSite:          http.SameSiteLaxMode,
 	}
+	m.repository = p.Repository
+	m.txMgr = p.TransactionManager
+	m.tracer = p.Tracer
 
 	// Start cleanup routine
 	m.cleanupTicker = time.NewTicker(5 * time.Minute)
@@ -65,27 +60,17 @@ func NewManager(p ManagerParams) *Manager {
 	return m
 }
 
-func (m *Manager) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet && r.URL.Path == "/healthz" {
-			next.ServeHTTP(w, r)
-
-			return
-		}
-
-		session, err := m.getOrCreateSession(w, r)
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), sessionCtxKey, session)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+func (m Manager) GetConfig() snowdrop.SessionConfig {
+	return m.config
 }
 
-func (m *Manager) GetSessionID(_ http.ResponseWriter, r *http.Request) (*string, error) {
+func (m Manager) GetSessionIDFromCookie(r *http.Request) (*string, error) {
+	_, span := m.tracer.Start(
+		r.Context(),
+		opentelemetry.BuildSpanName(m.structName, "GetSessionIDFromCookie"),
+	)
+	defer span.End()
+
 	cookie, err := r.Cookie(m.config.CookieName)
 	if err != nil {
 		return nil, err
@@ -94,20 +79,12 @@ func (m *Manager) GetSessionID(_ http.ResponseWriter, r *http.Request) (*string,
 	return &cookie.Value, nil
 }
 
-func (*Manager) GetCurrentSession(r *http.Request) (*snowdrop.SessionModel, error) {
-	if session, ok := r.Context().Value(sessionCtxKey).(*snowdrop.SessionModel); ok {
-		return session, nil
-	}
-
-	return nil, ErrNoSessionInContext
-}
-
-func (m *Manager) UpgradeSession(
+func (m Manager) UpgradeSession(
 	w http.ResponseWriter,
 	r *http.Request,
 	userID uuid.UUID,
 ) (*snowdrop.SessionModel, error) {
-	currentSession, getCurrentSessionErr := m.GetCurrentSession(r)
+	currentSession, getCurrentSessionErr := snowdrop.GetCurrentSession(r)
 	if getCurrentSessionErr != nil {
 		return nil, fmt.Errorf("cannot get the current session: %w", getCurrentSessionErr)
 	}
@@ -120,7 +97,7 @@ func (m *Manager) UpgradeSession(
 				return nil, err
 			}
 
-			session, err := m.CreateSession(ctx, userID)
+			session, err := m.CreateSession(ctx, userID, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -145,12 +122,18 @@ func (m *Manager) UpgradeSession(
 	return session, nil
 }
 
-func (m *Manager) GetSession(
+func (m Manager) GetSession(
 	ctx context.Context,
 	sessionID string,
 ) (*snowdrop.SessionModel, error) {
-	session, err := m.repository.GetSession(ctx, sessionID)
-	if err != nil || session == nil {
+	spanCtx, span := m.tracer.Start(
+		ctx,
+		opentelemetry.BuildSpanName(m.structName, "GetSession"),
+	)
+	defer span.End()
+
+	session, err := m.repository.GetSession(spanCtx, sessionID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -161,7 +144,7 @@ func (m *Manager) GetSession(
 		newExpires = session.ExpiresAt
 	}
 
-	err = m.repository.UpdateSession(ctx, sessionID, now, newExpires)
+	err = m.repository.UpdateSession(spanCtx, sessionID, now, newExpires)
 	if err != nil {
 		return nil, err
 	}
@@ -169,58 +152,30 @@ func (m *Manager) GetSession(
 	session.LastAccessedAt = now
 	session.ExpiresAt = newExpires
 
+	span.SetStatus(codes.Ok, "")
+
 	return session, nil
 }
 
-func (m *Manager) CreateSession(
+func (m Manager) CreateSession(
 	ctx context.Context,
 	userID uuid.UUID,
+	data map[string]any,
 ) (*snowdrop.SessionModel, error) {
-	return m.repository.CreateSession(ctx, userID, time.Now().Add(m.config.MaximumTimeout))
+	spanCtx, span := m.tracer.Start(
+		ctx,
+		opentelemetry.BuildSpanName(m.structName, "CreateSession"),
+	)
+	defer span.End()
+
+	return m.repository.CreateSession(spanCtx, userID, data, time.Now().Add(m.config.MaximumTimeout))
 }
 
-func (m *Manager) DestroySession(ctx context.Context, sessionID string) error {
+func (m Manager) DestroySession(ctx context.Context, sessionID string) error {
 	return m.repository.DeleteSession(ctx, sessionID)
 }
 
-func (m *Manager) getOrCreateSession(
-	w http.ResponseWriter,
-	r *http.Request,
-) (*snowdrop.SessionModel, error) {
-	sessionID, getSessionIDErr := m.GetSessionID(w, r)
-	if getSessionIDErr != nil && !errors.Is(getSessionIDErr, http.ErrNoCookie) {
-		return nil, getSessionIDErr
-	}
-
-	if sessionID != nil {
-		session, err := m.GetSession(r.Context(), *sessionID)
-		if err != nil {
-			return nil, err
-		}
-
-		return session, nil
-	}
-
-	// Guest session
-	session, err := m.CreateSession(r.Context(), uuid.Nil)
-	if err != nil {
-		return nil, err
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     m.config.CookieName,
-		Value:    session.ID,
-		Path:     "/",
-		Secure:   m.config.SecureCookie,
-		HttpOnly: m.config.HTTPOnlyCookie,
-		SameSite: m.config.SameSite,
-		Expires:  session.ExpiresAt,
-	})
-
-	return session, nil
-}
-
-func (m *Manager) cleanupExpiredSessions() {
+func (m Manager) cleanupExpiredSessions() {
 	for range m.cleanupTicker.C {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		_ = m.repository.DeleteExpiredSessions(ctx) // Best effort
