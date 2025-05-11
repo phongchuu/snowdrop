@@ -1,15 +1,17 @@
 package testutils
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
+	"testing"
 
 	"github.com/go-chi/chi/v5"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
-	"github.com/samber/lo"
-	"github.com/stretchr/testify/suite"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"go.opentelemetry.io/otel/trace"
@@ -40,25 +42,13 @@ type TestContainer struct {
 	MockUserService            *mockusermgt.MockUserService
 	GetPreferredUserLanguageFn snowdrop.GetPreferredUserLanguageFn
 	DB                         *sql.DB
-}
-
-type DefaultWebRouterOptions struct {
-	di     *TestContainer
-	routes []snowdrop.HTTPHandler
-}
-
-type ExtendedTestSuite struct {
-	suite.Suite
-	pgContainer      *postgres.PostgresContainer
-	connectionString string
+	PgContainer                *postgres.PostgresContainer
 }
 
 // StartPostgresContainer starts a PostgreSQL container for tests.
 // The container is reusable and a snapshot is created after startup.
-func (s *ExtendedTestSuite) StartPostgresContainer() {
-	s.T().Helper()
-
-	ctx := s.T().Context()
+func StartPostgresContainer(ctx context.Context) *postgres.PostgresContainer {
+	GinkgoHelper()
 
 	pgContainer, err := postgres.Run(
 		ctx,
@@ -69,74 +59,73 @@ func (s *ExtendedTestSuite) StartPostgresContainer() {
 		postgres.BasicWaitStrategies(),
 		testcontainers.WithReuseByName("e2e-postgresql"),
 	)
-	s.Require().NoError(err, "Failed to start test postgres container")
+	Expect(err).NotTo(HaveOccurred(), "Failed to start test postgres container")
+
+	//nolint:contextcheck // False positive
+	DeferCleanup(func(cleanupContextSpec SpecContext) error {
+		return RestorePgContainer(cleanupContextSpec, pgContainer)
+	})
 
 	err = pgContainer.Snapshot(ctx)
-	s.Require().NoError(err, "Failed to create snapshot of test postgres container")
+	Expect(err).NotTo(HaveOccurred(), "Failed to create snapshot of test postgres container")
 
-	s.pgContainer = pgContainer
-	s.connectionString = pgContainer.MustConnectionString(ctx, "sslmode=disable")
+	return pgContainer
 }
 
-// RestorePostgresContainer restores the PostgreSQL container to its initial state.
-func (s *ExtendedTestSuite) RestorePostgresContainer() {
-	s.T().Helper()
+func RestorePgContainer(ctx context.Context, pgContainer *postgres.PostgresContainer) error {
+	if pgContainer.IsRunning() {
+		err := pgContainer.Restore(ctx)
 
-	if s.pgContainer.IsRunning() {
-		s.Require().NoError(s.pgContainer.Restore(s.T().Context()))
+		return err
 	}
+
+	return nil
 }
 
-// StopPostgresContainer stops the PostgreSQL container.
-func (s *ExtendedTestSuite) StopPostgresContainer() {
-	s.T().Helper()
-
-	if s.pgContainer.IsRunning() {
-		err := s.pgContainer.Terminate(s.T().Context())
-		s.Require().NoError(err)
-	}
-}
-
-func (s *ExtendedTestSuite) SetupTestDependencyContainer() TestContainer {
-	s.T().Helper()
+func IntegrationTestSetup(tb testing.TB) TestContainer {
+	GinkgoHelper()
 
 	// This is used for database migration
-	s.T().Setenv("APP_DEFAULT_SYSTEM_PASSWORD", "Keep!t5ecret")
+	tb.Setenv("APP_DEFAULT_SYSTEM_PASSWORD", "Keep!t5ecret")
 
-	fxLifecycle := fxtest.NewLifecycle(s.T())
+	pgContainer := StartPostgresContainer(tb.Context())
+
+	fxLifecycle := fxtest.NewLifecycle(tb)
 	noopLogger := log.NewNoopLogger()
+	noopTracer := noop.NewTracerProvider().Tracer("noop.tracer")
 
 	// ConfigManager
-	configManager := mocksnowdrop.NewMockConfigManager(s.T())
-	configManager.EXPECT().GetEmbedResourceFolder().Return(GetResourceFS())
-	configManager.EXPECT().GetSupportedLanguages().Return([]language.Tag{
+	mockConfigManager := mocksnowdrop.NewMockConfigManager(tb)
+	mockConfigManager.EXPECT().GetEmbedResourceFolder().Return(GetResourceFS())
+	mockConfigManager.EXPECT().GetSupportedLanguages().Return([]language.Tag{
 		language.English,
 		language.Vietnamese,
 	})
-	configManager.EXPECT().GetMaxRequestSize().Return(int64(1 << 20)).Maybe()
-	configManager.EXPECT().
+	mockConfigManager.EXPECT().GetMaxRequestSize().Return(int64(1 << 20)).Maybe()
+	mockConfigManager.EXPECT().
 		GetDatabaseURL().
-		Return(s.connectionString)
+		Return(pgContainer.MustConnectionString(tb.Context()))
 
 	// I18nBundle
-	i18nBundle, err := translation.NewI18nBundle(configManager)
-	s.Require().NoError(err)
+	i18nBundle, err := translation.NewI18nBundle(mockConfigManager)
+	Expect(err).NotTo(HaveOccurred())
 
 	// Validator
 	validationModule, err := validation.NewValidator()
-	s.Require().NoError(err)
+	Expect(err).NotTo(HaveOccurred())
 
 	// GetPreferredUserLanguageFn
-	getPreferredUserLanguageFn := core.NewGetPreferredUserLanguageFn(configManager)
+	getPreferredUserLanguageFn := core.NewGetPreferredUserLanguageFn(mockConfigManager)
 
 	// Database
-	sqlDB, err := database.NewDatabase(fxLifecycle, noopLogger, configManager)
-	s.Require().NoError(err)
-	database.ExecuteDatabaseUpgrade(fxLifecycle, noopLogger, sqlDB, configManager)
+	sqlDB, err := database.NewDatabase(fxLifecycle, noopLogger, mockConfigManager)
+	Expect(err).NotTo(HaveOccurred())
+
+	database.ExecuteDatabaseUpgrade(fxLifecycle, noopLogger, sqlDB, mockConfigManager)
 
 	// Start the lifecycle
 	fxLifecycle.RequireStart()
-	s.T().Cleanup(func() {
+	DeferCleanup(func() {
 		fxLifecycle.RequireStop()
 	})
 
@@ -146,58 +135,36 @@ func (s *ExtendedTestSuite) SetupTestDependencyContainer() TestContainer {
 	// SessionManager
 	sessionManager := session.NewManager(session.ManagerParams{
 		TransactionManager: transactionManager,
-		Tracer:             noop.NewTracerProvider().Tracer("noop"),
-		Repository:         session.NewPostgresRepository(transactionManager, noop.NewTracerProvider().Tracer("noop")),
+		Tracer:             noopTracer,
+		Repository:         session.NewPostgresRepository(transactionManager, noopTracer),
 	})
 
 	return TestContainer{
 		GetPreferredUserLanguageFn: getPreferredUserLanguageFn,
 		NoopLogger:                 noopLogger,
-		MockConfigManager:          configManager,
+		MockConfigManager:          mockConfigManager,
 		I18nBundle:                 i18nBundle,
 		Validator:                  validationModule.Validator,
 		UniversalTranslator:        validationModule.UniversalTranslator,
-		NoopTracer:                 noop.NewTracerProvider().Tracer("noop-tracer"),
+		NoopTracer:                 noopTracer,
 		TransactionManager:         transactionManager,
 		SessionManager:             sessionManager,
-		MockUserService:            mockusermgt.NewMockUserService(s.T()),
 		DB:                         sqlDB,
+		PgContainer:                pgContainer,
 	}
 }
 
-func (*ExtendedTestSuite) WithDI(di TestContainer) func(*DefaultWebRouterOptions) {
-	return func(dwro *DefaultWebRouterOptions) {
-		dwro.di = &di
-	}
-}
-
-func (*ExtendedTestSuite) WithRoute(route snowdrop.HTTPHandler) func(*DefaultWebRouterOptions) {
-	return func(dwro *DefaultWebRouterOptions) {
-		dwro.routes = append(dwro.routes, route)
-	}
-}
-
-func (s *ExtendedTestSuite) DefaultWebRouter(
-	optionFns ...func(*DefaultWebRouterOptions),
-) *chi.Mux {
-	options := DefaultWebRouterOptions{}
-
-	for i := range optionFns {
-		optionFns[i](&options)
-	}
-
-	if options.di == nil {
-		options.di = lo.ToPtr(s.SetupTestDependencyContainer())
-	}
+func NewRouter(testContainer TestContainer, routes []snowdrop.HTTPHandler) *chi.Mux {
+	GinkgoHelper()
 
 	return web.NewRouter(web.RouteParams{
-		Config:                     options.di.MockConfigManager,
-		Logger:                     options.di.NoopLogger,
-		I18nBundle:                 options.di.I18nBundle,
-		HTTPRoutes:                 options.routes,
-		SessionManager:             options.di.SessionManager,
-		Tracer:                     options.di.NoopTracer,
-		UniversalTranslator:        options.di.UniversalTranslator,
-		GetPreferredUserLanguageFn: options.di.GetPreferredUserLanguageFn,
+		Config:                     testContainer.MockConfigManager,
+		Logger:                     testContainer.NoopLogger,
+		I18nBundle:                 testContainer.I18nBundle,
+		HTTPRoutes:                 routes,
+		SessionManager:             testContainer.SessionManager,
+		Tracer:                     testContainer.NoopTracer,
+		UniversalTranslator:        testContainer.UniversalTranslator,
+		GetPreferredUserLanguageFn: testContainer.GetPreferredUserLanguageFn,
 	})
 }

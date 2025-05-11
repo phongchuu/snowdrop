@@ -4,84 +4,76 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/stretchr/testify/suite"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"internal.snowdrop/common/features/healthz"
+	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/response"
 	"internal.snowdrop/testing/testutils"
 )
 
-type HealthzRouteTestSuite struct {
-	testutils.ExtendedTestSuite
-}
-
-//nolint:paralleltest // This test uses a database container, so it cannot run in parallel.
-func TestHealthzRouteTestSuite(t *testing.T) {
-	suite.Run(t, new(HealthzRouteTestSuite))
-}
-
-func (s *HealthzRouteTestSuite) SetupTest() {
-	s.StartPostgresContainer()
-}
-
-func (s *HealthzRouteTestSuite) TearDownTest() {
-	s.RestorePostgresContainer()
-}
-
-func (s *HealthzRouteTestSuite) TestHealthCheckRoute() {
-	di := s.SetupTestDependencyContainer()
-	router := s.DefaultWebRouter(
-		s.WithRoute(healthz.NewHealthCheckRoute(di.NoopLogger, di.DB)),
+var _ = Describe("[HealthCheckRoute]", Label("integration"), Serial, func() {
+	var (
+		di           testutils.TestContainer
+		router       *chi.Mux
+		healthzRoute snowdrop.HTTPHandler
 	)
 
-	s.True(router.Match(chi.NewRouteContext(), http.MethodGet, "/healthz"))
-}
+	BeforeEach(func() {
+		di = testutils.IntegrationTestSetup(GinkgoTB())
+		healthzRoute = healthz.NewHealthCheckRoute(di.NoopLogger, di.DB)
+		router = testutils.NewRouter(di, []snowdrop.HTTPHandler{
+			healthzRoute,
+		})
+	})
 
-func (s *HealthzRouteTestSuite) TestHealthCheckRouteServeHTTP() {
-	di := s.SetupTestDependencyContainer()
-	healthzRoute := healthz.NewHealthCheckRoute(di.NoopLogger, di.DB)
-	router := s.DefaultWebRouter(s.WithRoute(healthzRoute))
+	Context("When verifying route configuration", func() {
+		It("should have a endpoint: GET /healthz", func() {
+			isMatched := router.Match(chi.NewRouteContext(), http.MethodGet, "/healthz")
+			Expect(isMatched).To(BeTrue())
+		})
+	})
 
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(healthzRoute.Method(), healthzRoute.Path(), nil)
+	Describe(".ServeHTTP", func() {
+		Context("there is no wrong", func() {
+			It("should no error", func() {
+				w := httptest.NewRecorder()
+				r := httptest.NewRequest(healthzRoute.Method(), healthzRoute.Path(), http.NoBody)
 
-	router.ServeHTTP(w, r)
+				router.ServeHTTP(w, r)
 
-	var result response.Response[map[string]string]
+				var result response.Response[map[string]string]
+				Expect(json.Unmarshal(w.Body.Bytes(), &result)).To(Succeed())
 
-	s.Require().NoError(json.Unmarshal(w.Body.Bytes(), &result))
+				Expect(w.Code).To(Equal(http.StatusOK))
+				Expect(result.Status).To(Equal(http.StatusOK))
+				Expect(result.Message).To(Equal("Your request was successfully completed."))
+				Expect(result.Data["database"]).To(Equal("available"))
+				Expect(result.Timestamp).To(BeTemporally("~", time.Now(), time.Second))
+			})
+		})
 
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal(http.StatusOK, result.Status)
-	s.Equal("Your request was successfully completed.", result.Message)
-	s.Equal("available", result.Data["database"])
-	s.WithinDuration(time.Now(), result.Timestamp, time.Second)
-}
+		Context("When database is down", func() {
+			It("should return an error", func(ctx SpecContext) {
+				Expect(di.PgContainer.Terminate(ctx)).To(Succeed())
 
-func (s *HealthzRouteTestSuite) TestHealthCheckRouteServeHTTPV2() {
-	di := s.SetupTestDependencyContainer()
+				w := httptest.NewRecorder()
+				r := httptest.NewRequest(healthzRoute.Method(), healthzRoute.Path(), nil)
 
-	healthzRoute := healthz.NewHealthCheckRoute(di.NoopLogger, di.DB)
-	router := s.DefaultWebRouter(s.WithRoute(healthzRoute))
+				router.ServeHTTP(w, r)
 
-	// Simulate a database connection error
-	s.StopPostgresContainer()
+				var result response.Response[map[string]string]
+				Expect(json.Unmarshal(w.Body.Bytes(), &result)).To(Succeed())
 
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(healthzRoute.Method(), healthzRoute.Path(), nil)
-
-	router.ServeHTTP(w, r)
-
-	var result response.Response[map[string]string]
-
-	s.Require().NoError(json.Unmarshal(w.Body.Bytes(), &result))
-
-	s.Equal(http.StatusServiceUnavailable, w.Code)
-	s.Equal(http.StatusServiceUnavailable, result.Status)
-	s.Equal("The service is currently unavailable; please try again later.", result.Message)
-	s.Equal("unavailable", result.Data["database"])
-	s.WithinDuration(time.Now(), result.Timestamp, time.Second)
-}
+				Expect(w.Code).To(Equal(http.StatusServiceUnavailable))
+				Expect(result.Status).To(Equal(http.StatusServiceUnavailable))
+				Expect(result.Message).To(Equal("The service is currently unavailable; please try again later."))
+				Expect(result.Data["database"]).To(Equal("unavailable"))
+				Expect(result.Timestamp).To(BeTemporally("~", time.Now(), time.Second))
+			})
+		})
+	})
+})

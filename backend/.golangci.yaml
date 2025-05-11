@@ -95,10 +95,11 @@ linters:
     - misspell
     - nilnesserr
     - nlreturn
-    - paralleltest
+    # - paralleltest
     - recvcheck
     # - wrapcheck
     - contextcheck
+    - ginkgolinter
   settings:
     errorlint:
       errorf: true
@@ -193,6 +194,7 @@ linters:
     staticcheck:
       checks:
         - all
+        - -ST1001
     prealloc:
       simple: true
       range-loops: true
@@ -217,6 +219,11 @@ linters:
           arguments: [3]
         - name: function-result-limit
           arguments: [2]
+        - name: dot-imports
+          arguments:
+            - allowed-packages:
+                - github.com/onsi/ginkgo/v2
+                - github.com/onsi/gomega
     perfsprint:
       integer-format: true
       int-conversion: true
@@ -228,6 +235,19 @@ linters:
       strconcat: true
       bool-format: true
       hex-format: true
+    ginkgolinter:
+      suppress-len-assertion: true
+      suppress-nil-assertion: true
+      suppress-err-assertion: true
+      suppress-compare-assertion: true
+      suppress-async-assertion: true
+      suppress-type-compare-assertion: true
+      forbid-focus-container: true
+      allow-havelen-zero: true
+      force-expect-to: true
+      validate-async-intervals: true
+      forbid-spec-pollution: true
+      force-succeed: true
   exclusions:
     generated: lax
     presets:

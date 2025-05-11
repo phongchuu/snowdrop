@@ -66,9 +66,9 @@ jobs:
             exit 1
           }
       - name: Run golangci-linter
-        uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd
+        uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9
         with:
-          version: v2.1.5
+          version: v2.1.6
           problem-matchers: true
           working-directory: ${{ matrix.dir }}/${{ matrix.module }}
           args: --output.sarif.path ${{ matrix.module }}/report.sarif
@@ -89,33 +89,60 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: ./backend/go.work
-          cache-dependency-path: backend/**/*.sum
+          cache-dependency-path: backend/testing/go.sum
       - name: Unit test
         working-directory: backend/testing
         run: |
-          # Use "-p 1" to disable parallel execution
-          # For details, refer to: https://github.com/stretchr/testify/issues/52#issuecomment-1112149253
-
-          go tool gotestsum \
-            --junitfile junit.xml \
-            -- \
-            -p 1 \
-            -cover \
-            -covermode=atomic \
-            -coverprofile="coverage.txt" \
-            -coverpkg="internal.snowdrop/common/...,internal.snowdrop/console/...,internal.snowdrop/framework/..." \
-            -race \
-            ./...
+          go tool ginkgo run \
+            --keep-going \
+            --randomize-all \
+            --randomize-suites \
+            --procs=4 \
+            --label-filter="!integration" \
+            --require-suite \
+            --trace \
+            --github-output \
+            --junit-report="junit.xml" \
+            --race \
+            --cover \
+            --covermode="atomic" \
+            --coverpkg="internal.snowdrop/common/...,internal.snowdrop/console/...,internal.snowdrop/framework/..." \
+            --coverprofile="coverage.txt" \
+            --output-dir="./reports/unit-test" \
+            -r
+      - name: Integration test
+        working-directory: backend/testing
+        run: |
+          go tool ginkgo run \
+            --keep-going \
+            --randomize-all \
+            --randomize-suites \
+            --label-filter="integration" \
+            --require-suite \
+            --trace \
+            --github-output \
+            --junit-report="junit.xml" \
+            --race \
+            --cover \
+            --covermode="atomic" \
+            --coverpkg="internal.snowdrop/common/...,internal.snowdrop/console/...,internal.snowdrop/framework/..." \
+            --coverprofile="coverage.txt" \
+            --output-dir="./reports/integration-test" \
+            -r
       - name: Upload coverage reports to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          directory: backend/testing/reports
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/test-results-action@f2dba722c67b86c6caa034178c6e4d35335f6706
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          directory: backend/testing/reports
 
   build:
     name: Build image

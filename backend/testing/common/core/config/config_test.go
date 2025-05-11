@@ -1,50 +1,51 @@
 package core_test
 
 import (
-	"testing"
 	"testing/fstest"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"internal.snowdrop/common/core"
 )
 
-func TestNewConfig(t *testing.T) {
-	t.Parallel()
-
-	appCfg, err := core.NewAppConfig(core.ModuleConfig{})
-	require.NoError(t, err)
-	assert.NotNil(t, appCfg)
-}
-
-func TestGetDatabaseURL(t *testing.T) {
-	var embedFS fstest.MapFS
-
-	t.Setenv("APP_DB_USERNAME", "testuser")
-	t.Setenv("APP_DB_PASSWORD", "testpass")
-	t.Setenv("APP_DB_HOST", "localhost")
-	t.Setenv("APP_DB_NAME", "testdb")
-	t.Setenv("APP_DB_PORT", "5432")
-
-	appCfg, err := core.NewAppConfig(core.ModuleConfig{
-		EmbedResourcesFolder: embedFS,
+var _ = Describe("[AppConfig]", func() {
+	Describe("NewAppConfig", func() {
+		It("should create a new app config", func() {
+			appCfg, err := core.NewAppConfig(core.ModuleConfig{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(appCfg).NotTo(BeNil())
+		})
 	})
-	require.NoError(t, err)
-	assert.NotNil(t, appCfg)
 
-	assert.Equal(t, "postgresql://testuser:testpass@localhost:5432/testdb", appCfg.GetDatabaseURL())
-}
+	Describe("GetDatabaseURL", func() {
+		BeforeEach(func() {
+			GinkgoT().Setenv("APP_DB_USERNAME", "testuser")
+			GinkgoT().Setenv("APP_DB_PASSWORD", "testpass")
+			GinkgoT().Setenv("APP_DB_HOST", "localhost")
+			GinkgoT().Setenv("APP_DB_NAME", "testdb")
+			GinkgoT().Setenv("APP_DB_PORT", "5432")
+		})
 
-func TestGetEmbedResourceFolder(t *testing.T) {
-	t.Parallel()
+		It("should return the correct database URL", func() {
+			appCfg, err := core.NewAppConfig(core.ModuleConfig{})
 
-	var embedFS fstest.MapFS
-
-	appCfg, err := core.NewAppConfig(core.ModuleConfig{
-		EmbedResourcesFolder: embedFS,
+			Expect(err).NotTo(HaveOccurred())
+			Expect(appCfg).NotTo(BeNil())
+			Expect(appCfg.GetDatabaseURL()).To(Equal("postgresql://testuser:testpass@localhost:5432/testdb"))
+		})
 	})
-	require.NoError(t, err)
-	assert.NotNil(t, appCfg)
 
-	assert.Equal(t, embedFS, appCfg.GetEmbedResourceFolder())
-}
+	Describe("GetEmbedResourceFolder", func() {
+		It("should return the correct embed resource folder", func() {
+			var embedFS fstest.MapFS
+
+			appCfg, err := core.NewAppConfig(core.ModuleConfig{
+				EmbedResourcesFolder: embedFS,
+			})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(appCfg).NotTo(BeNil())
+			Expect(appCfg.GetEmbedResourceFolder()).To(Equal(embedFS))
+		})
+	})
+})
