@@ -5,126 +5,120 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/suite"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"internal.snowdrop/common/features/auth"
 	"internal.snowdrop/common/features/usermgt"
+	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/response"
 	"internal.snowdrop/testing/testutils"
 )
 
-type RegisterRouteTestSuite struct {
-	testutils.ExtendedTestSuite
-}
+var _ = Describe("[RegisterRoute]", Label("integration"), Serial, func() {
+	var (
+		di                testutils.TestContainer
+		router            *chi.Mux
+		authRegisterRoute snowdrop.HTTPHandler
+	)
 
-//nolint:paralleltest // This test uses a database container, so it cannot run in parallel.
-func TestRegisterRouteSuite(t *testing.T) {
-	suite.Run(t, new(RegisterRouteTestSuite))
-}
+	BeforeEach(func() {
+		di = testutils.IntegrationTestSetup(GinkgoTB())
 
-func (s *RegisterRouteTestSuite) SetupTest() {
-	s.StartPostgresContainer()
-}
-
-func (s *RegisterRouteTestSuite) TearDownTest() {
-	s.RestorePostgresContainer()
-}
-
-func (s *RegisterRouteTestSuite) TestRegisterRoute() {
-	di := s.SetupTestDependencyContainer()
-	router := s.DefaultWebRouter(
-		s.WithDI(di),
-		s.WithRoute(auth.NewRegisterRoute(auth.RegisterRouteParams{
+		userRepository := usermgt.NewUserRepository(usermgt.UserRepositoryParams{
+			TransactionManager: di.TransactionManager,
+		})
+		userService := usermgt.NewUserService(userRepository, di.NoopTracer)
+		authRegisterRoute = auth.NewRegisterRoute(auth.RegisterRouteParams{
 			Validator:   di.Validator,
-			UserService: di.MockUserService,
-		})),
-	)
+			UserService: userService,
+		})
 
-	s.True(router.Match(chi.NewRouteContext(), http.MethodPost, "/auth/register"))
-}
-
-func (s *RegisterRouteTestSuite) TestRegisterRouteServeHTTP() {
-	di := s.SetupTestDependencyContainer()
-
-	userRepository := usermgt.NewUserRepository(usermgt.UserRepositoryParams{
-		TransactionManager: di.TransactionManager,
+		router = testutils.NewRouter(di, []snowdrop.HTTPHandler{
+			authRegisterRoute,
+		})
 	})
-	userService := usermgt.NewUserService(userRepository, di.NoopTracer)
-	authRegisterRoute := auth.NewRegisterRoute(auth.RegisterRouteParams{
-		Validator:   di.Validator,
-		UserService: userService,
+
+	Context("When verifying route configuration", func() {
+		It("should have a endpoint: POST /auth/register", func() {
+			matched := router.Match(
+				chi.NewRouteContext(),
+				http.MethodPost,
+				"/auth/register",
+			)
+
+			Expect(matched).To(BeTrue())
+		})
 	})
-	router := s.DefaultWebRouter(
-		s.WithDI(di),
-		s.WithRoute(authRegisterRoute),
-	)
 
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, authRegisterRoute.Path(), bytes.NewBufferString(`
-	{
-		"username": "tester",
-		"email": "tester@internal.com",
-		"password": "Keep!T5ecret"
-	}`))
+	Context("with valid registration data", func() {
+		It("should successfully create a new user", func() {
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, authRegisterRoute.Path(), bytes.NewBufferString(`{
+                "username": "tester",
+                "email": "tester@internal.com",
+                "password": "Keep!T5ecret"
+            }`))
 
-	router.ServeHTTP(w, r)
+			router.ServeHTTP(w, r)
 
-	var result response.Response[usermgt.UserDTO]
+			var result response.Response[usermgt.UserDTO]
+			Expect(json.NewDecoder(w.Body).Decode(&result)).To(Succeed())
 
-	s.Require().NoError(json.NewDecoder(w.Body).Decode(&result))
-	s.Equal(http.StatusCreated, w.Code)
-	s.Equal(http.StatusCreated, result.Status)
-	s.Equal("The resource has been successfully created on the server.", result.Message)
-	s.NotEqual(result.Data.ID, uuid.Nil)
-	s.Equal("tester", result.Data.Username)
-	s.Equal("tester@internal.com", result.Data.Email)
-	s.WithinDuration(time.Now(), result.Data.CreatedAt, time.Second)
-	s.Equal("system", result.Data.CreatedBy)
-	s.Nil(result.Data.UpdatedAt)
-	s.Nil(result.Data.UpdatedBy)
-	s.WithinDuration(time.Now(), result.Timestamp, time.Second)
-}
+			// Verify HTTP response
+			Expect(w.Code).To(Equal(http.StatusCreated))
 
-func (s *RegisterRouteTestSuite) TestRegisterRouteHTTPValidationErrors() {
-	di := s.SetupTestDependencyContainer()
+			// Verify response content
+			Expect(result.Status).To(Equal(http.StatusCreated))
+			Expect(result.Message).To(Equal("The resource has been successfully created on the server."))
 
-	userRepository := usermgt.NewUserRepository(usermgt.UserRepositoryParams{
-		TransactionManager: di.TransactionManager,
+			// Verify user data
+			Expect(result.Data.ID).NotTo(Equal(uuid.Nil))
+			Expect(result.Data.Username).To(Equal("tester"))
+			Expect(result.Data.Email).To(Equal("tester@internal.com"))
+			Expect(result.Data.CreatedAt).To(BeTemporally("~", time.Now(), time.Second))
+			Expect(result.Data.CreatedBy).To(Equal("system"))
+			Expect(result.Data.UpdatedAt).To(BeNil())
+			Expect(result.Data.UpdatedBy).To(BeNil())
+
+			// Verify timestamp
+			Expect(result.Timestamp).To(BeTemporally("~", time.Now(), time.Second))
+		})
 	})
-	userService := usermgt.NewUserService(userRepository, di.NoopTracer)
-	authRegisterRoute := auth.NewRegisterRoute(auth.RegisterRouteParams{
-		Validator:   di.Validator,
-		UserService: userService,
+
+	Context("with invalid registration data", func() {
+		It("should return validation errors", func() {
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodPost, authRegisterRoute.Path(), bytes.NewBufferString(`{
+                "username": "",
+                "email": "",
+                "password": ""
+            }`))
+
+			router.ServeHTTP(w, r)
+
+			var result response.Response[validator.ValidationErrorsTranslations]
+			Expect(json.NewDecoder(w.Body).Decode(&result)).To(Succeed())
+
+			// Verify HTTP response
+			Expect(w.Code).To(Equal(http.StatusBadRequest))
+
+			// Verify response content
+			Expect(result.Status).To(Equal(http.StatusBadRequest))
+			Expect(result.Message).To(Equal("The request contains invalid parameters or is malformed."))
+
+			// Verify validation errors
+			Expect(result.Data).To(HaveLen(3))
+			Expect(result.Data["RegisterFormData.Username"]).To(Equal("Username is a required field"))
+			Expect(result.Data["RegisterFormData.Password"]).To(Equal("Password is a required field"))
+			Expect(result.Data["RegisterFormData.Email"]).To(Equal("Email is a required field"))
+
+			// Verify timestamp
+			Expect(result.Timestamp).To(BeTemporally("~", time.Now(), time.Second))
+		})
 	})
-	router := s.DefaultWebRouter(
-		s.WithDI(di),
-		s.WithRoute(authRegisterRoute),
-	)
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, authRegisterRoute.Path(), bytes.NewBufferString(`
-	{
-		"username": "",
-		"email": "",
-		"password": ""
-	}`))
-
-	router.ServeHTTP(w, r)
-
-	var result response.Response[validator.ValidationErrorsTranslations]
-
-	s.Require().NoError(json.NewDecoder(w.Body).Decode(&result))
-	s.Equal(http.StatusBadRequest, w.Code)
-	s.Equal(http.StatusBadRequest, result.Status)
-	s.Equal("The request contains invalid parameters or is malformed.", result.Message)
-	s.Len(result.Data, 3)
-	s.Equal("Username is a required field", result.Data["RegisterFormData.Username"])
-	s.Equal("Password is a required field", result.Data["RegisterFormData.Password"])
-	s.Equal("Email is a required field", result.Data["RegisterFormData.Email"])
-	s.WithinDuration(time.Now(), result.Timestamp, time.Second)
-}
+})
