@@ -2,16 +2,17 @@ package auth_test
 
 import (
 	"database/sql"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"time"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gavv/httpexpect/v2"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 	"github.com/samber/lo"
+	"github.com/spf13/cast"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/text/language"
 	"internal.snowdrop/common/core"
@@ -19,7 +20,6 @@ import (
 	"internal.snowdrop/common/features/usermgt"
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/log"
-	"internal.snowdrop/framework/response"
 	"internal.snowdrop/framework/uuidext"
 	"internal.snowdrop/framework/web"
 	mockusermgt "internal.snowdrop/testing/mocks/internal.snowdrop/common/features/usermgt"
@@ -42,21 +42,6 @@ var _ = Describe("[ProfileRoute]", Label("integration"), Serial, func() {
 		di.MockConfigManager.EXPECT().GetEmbedResourceFolder().Return(testutils.GetResourceFS())
 		mockSessionManager = mocksnowdrop.NewMockSessionManager(GinkgoT())
 		mockUserService = mockusermgt.NewMockUserService(GinkgoT())
-	})
-
-	Context("When verifying route configuration", func() {
-		It("should have a endpoint: GET /auth/profile", func() {
-			profileRoute := auth.NewProfileRoute(auth.ProfileRouteParams{
-				Tracer:      di.NoopTracer,
-				UserService: mockUserService,
-			})
-
-			router := testutils.NewRouter(di, []snowdrop.HTTPHandler{
-				profileRoute,
-			})
-
-			Expect(router.Match(chi.NewRouteContext(), http.MethodGet, "/auth/profile")).To(BeTrue())
-		})
 	})
 
 	Context("When accessing profile endpoint", func() {
@@ -90,18 +75,17 @@ var _ = Describe("[ProfileRoute]", Label("integration"), Serial, func() {
 				GetPreferredUserLanguageFn: core.NewGetPreferredUserLanguageFn(di.MockConfigManager),
 			})
 
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(profileRoute.Method(), profileRoute.Path(), http.NoBody)
+			server := httptest.NewServer(router)
+			defer server.Close()
 
-			router.ServeHTTP(w, r)
-
-			var result response.Response[any]
-
-			Expect(json.NewDecoder(w.Body).Decode(&result)).To(Succeed())
-			Expect(w.Code).To(Equal(http.StatusUnauthorized))
-			Expect(result.Status).To(Equal(http.StatusUnauthorized))
-			Expect(result.Message).To(Equal("Authentication is required to proceed with this request."))
-			Expect(result.Timestamp).To(BeTemporally("~", time.Now(), time.Second))
+			httpexpecter := httpexpect.Default(GinkgoT(), server.URL)
+			response := httpexpecter.GET("/auth/profile").Expect()
+			response.Status(http.StatusUnauthorized)
+			Expect(response.JSON().Object().Raw()).To(MatchAllKeys(Keys{
+				"status":    BeNumerically("==", http.StatusUnauthorized),
+				"message":   Equal("Authentication is required to proceed with this request."),
+				"timestamp": WithTransform(cast.ToTimeE, BeTemporally("~", time.Now(), time.Second)),
+			}))
 		})
 
 		It("should return user information for valid session", func() {
@@ -149,25 +133,27 @@ var _ = Describe("[ProfileRoute]", Label("integration"), Serial, func() {
 				GetPreferredUserLanguageFn: core.NewGetPreferredUserLanguageFn(di.MockConfigManager),
 			})
 
-			w := httptest.NewRecorder()
-			r := httptest.NewRequest(profileRoute.Method(), profileRoute.Path(), http.NoBody)
+			server := httptest.NewServer(router)
+			defer server.Close()
 
-			router.ServeHTTP(w, r)
+			httpexpecter := httpexpect.Default(GinkgoT(), server.URL)
 
-			var result response.Response[usermgt.UserDTO]
-
-			Expect(json.NewDecoder(w.Body).Decode(&result)).To(Succeed())
-			Expect(w.Code).To(Equal(http.StatusOK))
-			Expect(result.Status).To(Equal(http.StatusOK))
-			Expect(result.Message).To(Equal("Your request was successfully completed."))
-			Expect(result.Data.ID).To(Equal(userDTO.ID))
-			Expect(result.Data.Username).To(Equal(userDTO.Username))
-			Expect(result.Data.Email).To(Equal(userDTO.Email))
-			Expect(result.Data.CreatedAt).To(Equal(userDTO.CreatedAt))
-			Expect(result.Data.CreatedBy).To(Equal(userDTO.CreatedBy))
-			Expect(result.Data.UpdatedAt).To(Equal(userDTO.UpdatedAt))
-			Expect(result.Data.UpdatedBy).To(Equal(userDTO.UpdatedBy))
-			Expect(result.Timestamp).To(BeTemporally("~", time.Now(), time.Second))
+			response := httpexpecter.GET("/auth/profile").Expect()
+			response.Status(http.StatusOK)
+			Expect(response.JSON().Object().Raw()).To(MatchAllKeys(Keys{
+				"status":    BeNumerically("==", http.StatusOK),
+				"message":   Equal("Your request was successfully completed."),
+				"timestamp": WithTransform(cast.ToTimeE, BeTemporally("~", time.Now(), time.Second)),
+				"data": MatchKeys(IgnoreExtras, Keys{
+					"id":        Equal(userDTO.ID.String()),
+					"username":  Equal(userDTO.Username),
+					"email":     Equal(userDTO.Email),
+					"createdAt": Equal(userDTO.CreatedAt.Format(time.RFC3339Nano)),
+					"createdBy": Equal(userDTO.CreatedBy),
+					"updatedAt": Equal(userDTO.UpdatedAt.Format(time.RFC3339Nano)),
+					"updatedBy": Equal(*userDTO.UpdatedBy),
+				}),
+			}))
 		})
 
 		DescribeTable(
@@ -209,17 +195,18 @@ var _ = Describe("[ProfileRoute]", Label("integration"), Serial, func() {
 					GetPreferredUserLanguageFn: core.NewGetPreferredUserLanguageFn(di.MockConfigManager),
 				})
 
-				w := httptest.NewRecorder()
-				r := httptest.NewRequest(profileRoute.Method(), profileRoute.Path(), http.NoBody)
+				server := httptest.NewServer(router)
+				defer server.Close()
 
-				router.ServeHTTP(w, r)
+				httpexpecter := httpexpect.Default(GinkgoT(), server.URL)
 
-				var result response.Response[any]
-				Expect(json.NewDecoder(w.Body).Decode(&result)).To(Succeed())
-				Expect(w.Code).To(Equal(expectedCode))
-				Expect(result.Status).To(Equal(expectedCode))
-				Expect(result.Message).To(Equal(expectedMsg))
-				Expect(result.Timestamp).To(BeTemporally("~", time.Now(), time.Second))
+				response := httpexpecter.GET("/auth/profile").Expect()
+				response.Status(expectedCode)
+				Expect(response.JSON().Object().Raw()).To(MatchAllKeys(Keys{
+					"status":    BeNumerically("==", expectedCode),
+					"message":   Equal(expectedMsg),
+					"timestamp": WithTransform(cast.ToTimeE, BeTemporally("~", time.Now(), time.Second)),
+				}))
 			},
 			Entry(
 				"when user is deleted",

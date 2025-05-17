@@ -170,6 +170,7 @@ linters:
         - generic
         - fx.Option
         - universal-translator.Translator
+        - github.com/onsi/gomega/types.GomegaMatcher
     nolintlint:
       require-explanation: true
       require-specific: true
@@ -224,6 +225,7 @@ linters:
             - allowed-packages:
                 - github.com/onsi/ginkgo/v2
                 - github.com/onsi/gomega
+                - github.com/onsi/gomega/gstruct
     perfsprint:
       integer-format: true
       int-conversion: true
