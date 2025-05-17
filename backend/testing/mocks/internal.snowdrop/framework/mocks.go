@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 	"golang.org/x/text/language"
-	snowdrop "internal.snowdrop/framework"
+	"internal.snowdrop/framework"
 )
 
 // NewMockConfigManager creates a new instance of MockConfigManager. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
