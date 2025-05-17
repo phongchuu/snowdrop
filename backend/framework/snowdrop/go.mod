@@ -13,7 +13,7 @@ require (
 	github.com/nicksnyder/go-i18n/v2 v2.6.0
 	github.com/pressly/goose/v3 v3.24.2
 	github.com/samber/lo v1.49.1
-	github.com/spf13/cast v1.7.1
+	github.com/spf13/cast v1.8.0
 	go.opentelemetry.io/contrib/bridges/otelslog v0.10.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.60.0
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.60.0
