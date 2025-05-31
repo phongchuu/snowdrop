@@ -13,12 +13,16 @@ import (
 )
 
 type SessionModel struct {
-	ID             string           `db:"id"`
-	UserID         uuid.NullUUID    `db:"user_id"`
-	Data           *json.RawMessage `db:"data"`
-	CreatedAt      time.Time        `db:"created_at"`
-	LastAccessedAt time.Time        `db:"last_accessed_at"`
-	ExpiresAt      time.Time        `db:"expires_at"`
+	ID             string           `gorm:"id"`
+	UserID         uuid.NullUUID    `gorm:"user_id"`
+	Data           *json.RawMessage `gorm:"data"`
+	CreatedAt      time.Time        `gorm:"created_at"`
+	LastAccessedAt time.Time        `gorm:"last_accessed_at"`
+	ExpiresAt      time.Time        `gorm:"expires_at"`
+}
+
+func (s *SessionModel) TableName() string {
+	return "sessions"
 }
 
 // Config holds session configuration.

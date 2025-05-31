@@ -2,15 +2,15 @@ package usermgt
 
 import (
 	"context"
-	"database/sql"
 	"reflect"
 
-	"github.com/georgysavva/scany/v2/sqlscan"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"internal.snowdrop/common/store"
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/database"
@@ -21,12 +21,14 @@ import (
 type UserRepositoryImpl struct {
 	structName string
 	txMgr      snowdrop.TransactionManager
+	gormDB     *gorm.DB
 	tracer     trace.Tracer
 }
 
 type UserRepositoryParams struct {
 	fx.In
 	TransactionManager snowdrop.TransactionManager
+	GormDB             *gorm.DB
 	Tracer             trace.Tracer
 }
 
@@ -37,6 +39,7 @@ func NewUserRepository(p UserRepositoryParams) UserRepositoryImpl {
 	userRepositoryImpl.structName = reflect.TypeOf(userRepositoryImpl).Name()
 	userRepositoryImpl.txMgr = p.TransactionManager
 	userRepositoryImpl.tracer = p.Tracer
+	userRepositoryImpl.gormDB = p.GormDB
 
 	return userRepositoryImpl
 }
@@ -46,35 +49,19 @@ func (u UserRepositoryImpl) CreateUser(
 	ctx context.Context,
 	params UserSetter,
 ) (*store.UserModel, error) {
-	return database.RunTxWithData(
-		ctx,
-		u.txMgr,
-		func(ctx context.Context, tx *sql.Tx) (*store.UserModel, error) {
-			model := store.UserModel{
-				ID:       uuidext.MustUUIDV7(),
-				Username: params.Username,
-				Email:    params.Email,
-				Password: params.Password,
-			}
+	model := store.UserModel{
+		ID:       uuidext.MustUUIDV7(),
+		Username: params.Username,
+		Email:    params.Email,
+		Password: params.Password,
+	}
 
-			if err := sqlscan.Get(
-				ctx,
-				tx,
-				&model,
-				`INSERT INTO public.users(id, username, email, password)
-            VALUES ($1, $2, $3, $4)
-            RETURNING *`,
-				model.ID,
-				model.Username,
-				model.Email,
-				model.Password,
-			); err != nil {
-				return nil, err
-			}
+	result := u.gormDB.WithContext(ctx).Clauses(clause.Returning{}).Create(&model)
+	if result.Error != nil {
+		return nil, result.Error
+	}
 
-			return &model, nil
-		},
-	)
+	return &model, nil
 }
 
 func (u UserRepositoryImpl) GetUserByID(
@@ -91,22 +78,15 @@ func (u UserRepositoryImpl) GetUserByID(
 	return database.RunTxWithData(
 		spanCtx,
 		u.txMgr,
-		func(ctx context.Context, tx *sql.Tx) (*store.UserModel, error) {
+		func(ctx context.Context, tx *gorm.DB) (*store.UserModel, error) {
 			var userModel store.UserModel
 
-			err := sqlscan.Get(
-				ctx,
-				tx,
-				&userModel,
-				`SELECT id, username, email, created_at, created_by, updated_at, updated_by
-                FROM public.users WHERE id = $1`,
-				id,
-			)
-			if err != nil {
-				span.RecordError(err)
-				span.SetStatus(codes.Error, err.Error())
+			result := tx.First(&userModel, "id = ?", id)
+			if result.Error != nil {
+				span.RecordError(result.Error)
+				span.SetStatus(codes.Error, result.Error.Error())
 
-				return nil, err
+				return nil, result.Error
 			}
 
 			span.SetStatus(codes.Ok, "")
@@ -123,19 +103,13 @@ func (u UserRepositoryImpl) GetUserByUsername(
 	return database.RunTxWithData(
 		ctx,
 		u.txMgr,
-		func(ctx context.Context, tx *sql.Tx) (*store.UserModel, error) {
+		func(ctx context.Context, tx *gorm.DB) (*store.UserModel, error) {
 			var userModel store.UserModel
 
-			if err := sqlscan.Get(
-				ctx,
-				tx,
-				&userModel,
-				`SELECT id, username, email, password, created_at, created_by, updated_at, updated_by
-            FROM public.users
-            WHERE username = $1`,
-				username,
-			); err != nil {
-				return nil, err
+			result := tx.First(&userModel, "username = ?", username)
+
+			if result.Error != nil {
+				return nil, result.Error
 			}
 
 			return &userModel, nil

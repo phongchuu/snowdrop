@@ -6,5 +6,6 @@
     "files.insertFinalNewline": true,
     "go.lintTool": "golangci-lint",
     "go.testFlags": ["-count=1", "-race", "-p=1"],
-    "editor.fontSize": 18
+    "editor.fontSize": 18,
+    "python.analysis.typeCheckingMode": "strict"
 }

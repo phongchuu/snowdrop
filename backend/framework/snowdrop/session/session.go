@@ -3,7 +3,6 @@ package session
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
+	"gorm.io/gorm"
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/database"
 	"internal.snowdrop/framework/opentelemetry"
@@ -27,6 +27,7 @@ type Manager struct {
 	repository    snowdrop.SessionRepository
 	cleanupTicker *time.Ticker
 	tracer        trace.Tracer
+	db            *gorm.DB
 }
 
 type ManagerParams struct {
@@ -34,6 +35,7 @@ type ManagerParams struct {
 	TransactionManager snowdrop.TransactionManager
 	Repository         snowdrop.SessionRepository
 	Tracer             trace.Tracer
+	DB                 *gorm.DB
 }
 
 var _ snowdrop.SessionManager = (*Manager)(nil)
@@ -52,6 +54,7 @@ func NewManager(p ManagerParams) Manager {
 	m.repository = p.Repository
 	m.txMgr = p.TransactionManager
 	m.tracer = p.Tracer
+	m.db = p.DB
 
 	// Start cleanup routine
 	m.cleanupTicker = time.NewTicker(5 * time.Minute)
@@ -88,11 +91,10 @@ func (m Manager) UpgradeSession(
 	if getCurrentSessionErr != nil {
 		return nil, fmt.Errorf("cannot get the current session: %w", getCurrentSessionErr)
 	}
-
 	session, err := database.RunTxWithData(
 		r.Context(),
 		m.txMgr,
-		func(ctx context.Context, _ *sql.Tx) (*snowdrop.SessionModel, error) {
+		func(ctx context.Context, _ *gorm.DB) (*snowdrop.SessionModel, error) {
 			if err := m.repository.DeleteSession(ctx, currentSession.ID); err != nil {
 				return nil, err
 			}

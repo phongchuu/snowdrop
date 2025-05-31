@@ -18,12 +18,6 @@ COPY ${FRAMEWORK_PATH}/go.mod ${FRAMEWORK_PATH}/go.sum ${FRAMEWORK_PATH}/
 COPY ${COMMON_MODULE_PATH}/go.mod ${COMMON_MODULE_PATH}/go.sum ${COMMON_MODULE_PATH}/
 COPY ${CONSOLE_MODULE_PATH}/go.mod ${CONSOLE_MODULE_PATH}/go.sum ${CONSOLE_MODULE_PATH}/
 
-WORKDIR ${FRAMEWORK_PATH}
-RUN go mod download && go mod verify
-
-WORKDIR ${COMMON_MODULE_PATH}
-RUN go mod download && go mod verify
-
 WORKDIR ${CONSOLE_MODULE_PATH}
 RUN go mod download && go mod verify
 
@@ -40,6 +34,8 @@ RUN CGO_ENABLED=0 go build \
     -o "/usr/bin/console" .
 
 FROM alpine:3.22
+
+RUN apk add --no-cache curl=8.14.1-r0
 
 COPY --from=builder "/usr/bin/console" /usr/bin/console
 
