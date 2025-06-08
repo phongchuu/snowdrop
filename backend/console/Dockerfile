@@ -39,7 +39,7 @@ RUN CGO_ENABLED=0 go build \
     -X 'main.AppRevision=${APP_REVISION}'" \
     -o "/usr/bin/console" .
 
-FROM alpine:3.21
+FROM alpine:3.22
 
 COPY --from=builder "/usr/bin/console" /usr/bin/console
 
