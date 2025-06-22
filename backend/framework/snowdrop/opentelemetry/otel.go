@@ -120,7 +120,7 @@ func newTracerProvider(
 ) (*trace.TracerProvider, error) {
 	traceExporter, err := otlptrace.New(
 		context.Background(),
-		otlptracegrpc.NewClient(otlptracegrpc.WithInsecure()),
+		otlptracegrpc.NewClient(),
 	)
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func newMetricProvider(
 	lifecycle fx.Lifecycle,
 	r *otelSDKResource.Resource,
 ) (*metric.MeterProvider, error) {
-	metricExporter, err := otlpmetricgrpc.New(context.TODO(), otlpmetricgrpc.WithInsecure())
+	metricExporter, err := otlpmetricgrpc.New(context.TODO())
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func newLoggerProvider(
 		return nil, err
 	}
 
-	logExporter, err := otlploggrpc.New(context.Background(), otlploggrpc.WithInsecure())
+	logExporter, err := otlploggrpc.New(context.Background())
 	if err != nil {
 		return nil, err
 	}

@@ -97,12 +97,17 @@ func initDatabaseConfig(provider *viper.Viper, appCfg *AppConfig) {
 	dbHost := provider.GetString("db_host")
 	dbName := provider.GetString("db_name")
 	dbPort := provider.GetString("db_port")
+	dsn := provider.GetString("db_dsn")
 
-	appCfg.databaseURL = fmt.Sprintf(
-		"postgresql://%s:%s@%s/%s",
-		username,
-		password,
-		net.JoinHostPort(dbHost, dbPort),
-		dbName,
-	)
+	if len(dsn) > 0 {
+		appCfg.databaseURL = dsn
+	} else {
+		appCfg.databaseURL = fmt.Sprintf(
+			"postgresql://%s:%s@%s/%s",
+			username,
+			password,
+			net.JoinHostPort(dbHost, dbPort),
+			dbName,
+		)
+	}
 }

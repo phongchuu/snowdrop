@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log/slog"
+	"os"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -18,10 +19,10 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/fx/fxtest"
 	"golang.org/x/text/language"
+	"gorm.io/gorm"
 	"internal.snowdrop/common/core"
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/database"
-	"internal.snowdrop/framework/log"
 	"internal.snowdrop/framework/session"
 	"internal.snowdrop/framework/translation"
 	"internal.snowdrop/framework/validation"
@@ -42,6 +43,7 @@ type TestContainer struct {
 	MockUserService            *mockusermgt.MockUserService
 	GetPreferredUserLanguageFn snowdrop.GetPreferredUserLanguageFn
 	DB                         *sql.DB
+	GormDB                     *gorm.DB
 	PgContainer                *postgres.PostgresContainer
 }
 
@@ -91,7 +93,7 @@ func IntegrationTestSetup(tb testing.TB) TestContainer {
 	pgContainer := StartPostgresContainer(tb.Context())
 
 	fxLifecycle := fxtest.NewLifecycle(tb)
-	noopLogger := log.NewNoopLogger()
+	noopLogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	noopTracer := noop.NewTracerProvider().Tracer("noop.tracer")
 
 	// ConfigManager
@@ -120,8 +122,7 @@ func IntegrationTestSetup(tb testing.TB) TestContainer {
 	// Database
 	sqlDB, err := database.NewDatabase(fxLifecycle, noopLogger, mockConfigManager)
 	Expect(err).NotTo(HaveOccurred())
-
-	database.ExecuteDatabaseUpgrade(fxLifecycle, noopLogger, sqlDB, mockConfigManager)
+	database.ExecuteDatabaseUpgrade(fxLifecycle, noopLogger, sqlDB.SQLDB, mockConfigManager)
 
 	// Start the lifecycle
 	fxLifecycle.RequireStart()
@@ -130,7 +131,7 @@ func IntegrationTestSetup(tb testing.TB) TestContainer {
 	})
 
 	// TransactionManager
-	transactionManager := database.NewTransactionManager(sqlDB)
+	transactionManager := database.NewTransactionManager(sqlDB.GormDB)
 
 	// SessionManager
 	sessionManager := session.NewManager(session.ManagerParams{
@@ -149,8 +150,9 @@ func IntegrationTestSetup(tb testing.TB) TestContainer {
 		NoopTracer:                 noopTracer,
 		TransactionManager:         transactionManager,
 		SessionManager:             sessionManager,
-		DB:                         sqlDB,
+		DB:                         sqlDB.SQLDB,
 		PgContainer:                pgContainer,
+		GormDB:                     sqlDB.GormDB,
 	}
 }
 

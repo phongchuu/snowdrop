@@ -6,31 +6,29 @@ import (
 	"errors"
 	"fmt"
 
+	"gorm.io/gorm"
 	snowdrop "internal.snowdrop/framework"
 )
 
 type transactionManagerType string
 
 type TransactionManagerImpl struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
 const transactionManagerCtxKey transactionManagerType = "tx"
 
 var _ snowdrop.TransactionManager = (*TransactionManagerImpl)(nil)
 
-func NewTransactionManager(db *sql.DB) *TransactionManagerImpl {
+func NewTransactionManager(db *gorm.DB) *TransactionManagerImpl {
 	return &TransactionManagerImpl{db: db}
 }
 
 func (m TransactionManagerImpl) NewTransaction(
 	ctx context.Context,
 	opts *sql.TxOptions,
-) (*sql.Tx, error) {
-	tx, err := m.db.BeginTx(ctx, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
+) (*gorm.DB, error) {
+	tx := m.db.WithContext(ctx).Begin(opts)
 
 	if err := m.configureTransaction(ctx, tx); err != nil {
 		_ = tx.Rollback()
@@ -41,43 +39,40 @@ func (m TransactionManagerImpl) NewTransaction(
 	return tx, nil
 }
 
-func (TransactionManagerImpl) GetCurrentTx(ctx context.Context) *sql.Tx {
-	if tx, ok := ctx.Value(transactionManagerCtxKey).(*sql.Tx); ok {
+func (TransactionManagerImpl) GetCurrentTx(ctx context.Context) *gorm.DB {
+	if tx, ok := ctx.Value(transactionManagerCtxKey).(*gorm.DB); ok {
 		return tx
 	}
 
 	return nil
 }
 
-func (TransactionManagerImpl) configureTransaction(ctx context.Context, tx *sql.Tx) error {
+func (TransactionManagerImpl) configureTransaction(ctx context.Context, tx *gorm.DB) error {
 	currentSession, err := snowdrop.GetCurrentSessionFromCtx(ctx)
 	if err != nil || errors.Is(err, snowdrop.ErrNoSession) {
-		_, err = tx.ExecContext(
-			ctx,
+		err = tx.Exec(
 			`SELECT set_config('session.requester', u.id::VARCHAR(255), true)
             FROM public.users u
             WHERE u.username = $1;`,
 			"system",
-		)
+		).Error
 	}
 
 	if currentSession != nil {
 		if !currentSession.UserID.Valid {
-			_, err = tx.ExecContext(
-				ctx,
+			err = tx.Exec(
 				`SELECT set_config('session.requester', u.id::VARCHAR(255), true)
                 FROM public.users u
                 WHERE u.username = $1;`,
 				"annonymous",
-			)
+			).Error
 		}
 
 		if currentSession.UserID.Valid {
-			_, err = tx.ExecContext(
-				ctx,
+			err = tx.Exec(
 				`SELECT set_config('session.requester', $1, true);`,
 				currentSession.UserID.UUID.String(),
-			)
+			).Error
 		}
 	}
 
@@ -149,7 +144,7 @@ func RunTx(
 		ctx,
 		transactionManager,
 		nil,
-		func(ctx context.Context, tx *sql.Tx) (any, error) {
+		func(ctx context.Context, tx *gorm.DB) (any, error) {
 			return nil, fn(ctx, tx)
 		},
 	)
@@ -167,7 +162,7 @@ func RunTxWithOptions(
 		ctx,
 		transactionManager,
 		opts,
-		func(ctx context.Context, tx *sql.Tx) (any, error) {
+		func(ctx context.Context, tx *gorm.DB) (any, error) {
 			return nil, fn(ctx, tx)
 		},
 	)

@@ -10,14 +10,20 @@ import (
 )
 
 type UserModel struct {
-	ID        uuid.UUID      `db:"id"`
-	Username  string         `db:"username"`
-	Email     string         `db:"email"`
-	Password  string         `db:"password"`
-	CreatedAt time.Time      `db:"created_at"`
-	CreatedBy string         `db:"created_by"`
-	UpdatedAt sql.NullTime   `db:"updated_at"`
-	UpdatedBy sql.NullString `db:"updated_by"`
+	ID       uuid.UUID `gorm:"id"`
+	Username string    `gorm:"username"`
+	Email    string    `gorm:"email"`
+	Password string    `gorm:"password"`
+
+	// Readonly fields
+	CreatedAt time.Time      `gorm:"created_at;->"`
+	CreatedBy string         `gorm:"created_by;->"`
+	UpdatedAt sql.NullTime   `gorm:"updated_at;->"`
+	UpdatedBy sql.NullString `gorm:"updated_by;->"`
+}
+
+func (model UserModel) TableName() string {
+	return "users"
 }
 
 func (model UserModel) LogValue() slog.Value {

@@ -2,18 +2,17 @@ package session
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
 
-	"github.com/georgysavva/scany/v2/sqlscan"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	snowdrop "internal.snowdrop/framework"
 	"internal.snowdrop/framework/database"
 	"internal.snowdrop/framework/opentelemetry"
@@ -51,21 +50,11 @@ func (r *PostgresRepository) GetSession(
 	return database.RunTxWithData(
 		spanCtx,
 		r.txMgr,
-		func(ctx context.Context, tx *sql.Tx) (*snowdrop.SessionModel, error) {
+		func(ctx context.Context, tx *gorm.DB) (*snowdrop.SessionModel, error) {
 			var session snowdrop.SessionModel
-
-			err := sqlscan.Get(
-				ctx,
-				tx,
-				&session,
-				`SELECT id, user_id, created_at, last_accessed_at, expires_at, data
-                FROM sessions
-                WHERE id = $1 AND expires_at > NOW()
-                FOR UPDATE`,
-				sessionID,
-			)
-			if err != nil {
-				return nil, err
+			result := tx.First(&session, "id = ? AND expires_at > NOW()", sessionID)
+			if result.Error != nil {
+				return nil, result.Error
 			}
 
 			return &session, nil
@@ -90,14 +79,14 @@ func (r *PostgresRepository) UpdateSession(
 	)
 	defer span.End()
 
-	return database.RunTx(spanCtx, r.txMgr, func(ctx context.Context, tx *sql.Tx) error {
-		_, err := tx.ExecContext(
-			ctx,
+	return database.RunTx(spanCtx, r.txMgr, func(ctx context.Context, tx *gorm.DB) error {
+		err := tx.Exec(
 			`UPDATE sessions SET last_accessed_at = $1, expires_at = $2 WHERE id = $3`,
 			lastAccessedAt,
 			expiresAt,
 			sessionID,
-		)
+		).Error
+
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
@@ -138,42 +127,38 @@ func (r *PostgresRepository) CreateSession(
 	return database.RunTxWithData(
 		spanCtx,
 		r.txMgr,
-		func(ctx context.Context, tx *sql.Tx) (*snowdrop.SessionModel, error) {
-			var model snowdrop.SessionModel
-
-			var serializedData *[]byte
-
-			if len(data) > 0 {
-				dataAsBytes, marshalErr := json.Marshal(data)
-				if marshalErr != nil {
-					return nil, marshalErr
-				}
-
-				serializedData = &dataAsBytes
+		func(ctx context.Context, tx *gorm.DB) (*snowdrop.SessionModel, error) {
+			model := snowdrop.SessionModel{
+				ID: sessionID,
+				UserID: uuid.NullUUID{
+					UUID:  lo.Ternary(userID == uuid.Nil, uuid.Nil, userID),
+					Valid: userID != uuid.Nil,
+				},
+				CreatedAt:      now,
+				LastAccessedAt: now,
+				ExpiresAt:      expiresAt,
+				// Data:           serializedData,
 			}
+
+			// var serializedData *[]byte
+
+			// if len(data) > 0 {
+			// 	dataAsBytes, marshalErr := json.Marshal(data)
+			// 	if marshalErr != nil {
+			// 		return nil, marshalErr
+			// 	}
+
+			// 	serializedData = &dataAsBytes
+			// }
 
 			if err != nil {
 				return nil, err
 			}
 
-			if err := sqlscan.Get(
-				ctx,
-				tx,
-				&model,
-				`INSERT INTO sessions (id, user_id, created_at, last_accessed_at, expires_at, data)
-			    VALUES ($1, $2, $3, $4, $5, $6)
-			    RETURNING *`,
-				sessionID,
-				uuid.NullUUID{
-					UUID:  lo.Ternary(userID == uuid.Nil, uuid.Nil, userID),
-					Valid: userID != uuid.Nil,
-				},
-				now,
-				now,
-				expiresAt,
-				serializedData,
-			); err != nil {
-				return nil, err
+			result := tx.Clauses(clause.Returning{}).Create(&model)
+
+			if result.Error != nil {
+				return nil, result.Error
 			}
 
 			return &model, nil
@@ -182,16 +167,16 @@ func (r *PostgresRepository) CreateSession(
 }
 
 func (r *PostgresRepository) DeleteSession(ctx context.Context, sessionID string) error {
-	return database.RunTx(ctx, r.txMgr, func(ctx context.Context, tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, "DELETE FROM sessions WHERE id = $1", sessionID)
+	return database.RunTx(ctx, r.txMgr, func(ctx context.Context, tx *gorm.DB) error {
+		err := tx.Exec("DELETE FROM sessions WHERE id = $1", sessionID).Error
 
 		return err
 	})
 }
 
 func (r *PostgresRepository) DeleteExpiredSessions(ctx context.Context) error {
-	return database.RunTx(ctx, r.txMgr, func(ctx context.Context, tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, "DELETE FROM sessions WHERE expires_at < NOW()")
+	return database.RunTx(ctx, r.txMgr, func(ctx context.Context, tx *gorm.DB) error {
+		err := tx.Exec("DELETE FROM sessions WHERE expires_at < NOW()").Error
 
 		return err
 	})
