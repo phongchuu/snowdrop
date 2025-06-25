@@ -131,7 +131,7 @@ jobs:
             -r
       - name: Upload coverage reports to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24
+        uses: codecov/codecov-action@2db07e317924c76f654a414629d71c65876882e2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
