@@ -14,7 +14,7 @@ tool github.com/onsi/ginkgo/v2/ginkgo
 
 require (
 	github.com/gavv/httpexpect/v2 v2.17.0
-	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/google/uuid v1.6.0
