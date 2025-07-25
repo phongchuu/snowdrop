@@ -47,7 +47,7 @@ services:
       - backend
 
   pgadmin:
-    image: dpage/pgadmin4:9.3.0
+    image: dpage/pgadmin4:9.6.0
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
